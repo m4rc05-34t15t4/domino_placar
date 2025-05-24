@@ -22,3 +22,13 @@ body {
     max-width: 400px !important;
     max-height: 100px !important;
 }
+
+.numero_placar{
+    max-width: 60px;
+}
+
+.td-content-h {
+    height: 100%;
+    align-items: center; /* Faz o conteúdo ocupar toda a altura da célula */
+    justify-content: center; /* Opcional: centraliza horizontalmente */
+}
