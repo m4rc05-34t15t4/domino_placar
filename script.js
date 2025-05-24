@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
 
     $JOGADORES =  {};
+    $PARTIDAS = [];
 
     const ModalPartida = new bootstrap.Modal(document.getElementById('ModalPartida'));
 
@@ -120,30 +121,35 @@ document.addEventListener('DOMContentLoaded', function() {
             const linha = document.createElement("div");
             linha.classList.add("input-group", "mb-2");
 
+            $bt = '';
+            if(administrador()) {
+                $bt = `<button id="bt_editar_jogador_${id}" id_jogador="${id}" class="btn btn-outline-secondary editarJogador">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+                    <path d="M12.146.854a.5.5 0 0 1 .708 0l2.292 2.292a.5.5 0 0 1 0 .708l-9.439 9.44a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l9.44-9.44zM11.207 2L3 10.207V11h.793L13 3.793 11.207 2zM2 12v1h1l.293-.293L2 12z"/>
+                    </svg>
+                </button>
+                <button id="bt_excluir_jogador_${id}" id_jogador="${id}" class="btn btn-outline-danger excluirJogador">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                    <path d="M5.5 5.5a.5.5 0 0 1 .5-.5h.5v7h-1v-7zm3 0a.5.5 0 0 1 .5-.5h.5v7h-1v-7z"/>
+                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H5.5l1-1h3l1 1H14.5a1 1 0 0 1 1 1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3a.5.5 0 0 0 0 1H3h10h.5a.5.5 0 0 0 0-1H13h-1.5l-1-1h-3l-1 1H3H2.5z"/>
+                    </svg>
+                </button>`;
+            }
+
             linha.innerHTML = `
-            <input type="text" class="form-control" value="${nome}" id="jogador-${id}" readonly>
-            <button id="bt_editar_jogador_${id}" id_jogador="${id}" class="btn btn-outline-secondary editarJogador">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
-                <path d="M12.146.854a.5.5 0 0 1 .708 0l2.292 2.292a.5.5 0 0 1 0 .708l-9.439 9.44a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l9.44-9.44zM11.207 2L3 10.207V11h.793L13 3.793 11.207 2zM2 12v1h1l.293-.293L2 12z"/>
-                </svg>
-            </button>
-            <button id="bt_excluir_jogador_${id}" id_jogador="${id}" class="btn btn-outline-danger excluirJogador">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
-                <path d="M5.5 5.5a.5.5 0 0 1 .5-.5h.5v7h-1v-7zm3 0a.5.5 0 0 1 .5-.5h.5v7h-1v-7z"/>
-                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H5.5l1-1h3l1 1H14.5a1 1 0 0 1 1 1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3a.5.5 0 0 0 0 1H3h10h.5a.5.5 0 0 0 0-1H13h-1.5l-1-1h-3l-1 1H3H2.5z"/>
-                </svg>
-            </button>
-            `;
+            <input type="text" class="form-control" value="${nome}" id="jogador-${id}" readonly>${$bt}`;
 
             container.appendChild(linha);
 
-            $(`#bt_editar_jogador_${id}`).click(function(){
-                editarJogador($(this).attr("id_jogador"));
-            });
+            if(administrador()){
+                $(`#bt_editar_jogador_${id}`).click(function(){
+                    editarJogador($(this).attr("id_jogador"));
+                });
 
-            $(`#bt_excluir_jogador_${id}`).click(function(){
-                excluirJogador($(this).attr("id_jogador"));
-            });
+                $(`#bt_excluir_jogador_${id}`).click(function(){
+                    excluirJogador($(this).attr("id_jogador"));
+                });
+            }
         });
 
         $(`#bt_add_jogador_linha`).click(function(){
@@ -232,15 +238,15 @@ document.addEventListener('DOMContentLoaded', function() {
             card.innerHTML = `
                 <div id="div_partida_${partida.id}" dados_partida="${Object.values(partida)}" class="card-partida card-body">
                     <div class="d-flex justify-content-between align-items-center">
-                        <div class="text-primary">
+                        <div class="col text-primary">
                             <div>${jogadores[partida.jogador1_id] || "?"}</div>
                             <div>${jogadores[partida.jogador2_id] || "?"}</div>
                         </div>
-                        <div class="d-flex flex-column justify-content-between align-items-center">
+                        <div class="col d-flex flex-column justify-content-between align-items-center">
                             <small class="text-muted">${dataFormatada}</small>
                             <div class="fw-bold fs-4">${partida.placar1} x ${partida.placar2}</div>
                         </div>
-                        <div class="text-danger text-end">
+                        <div class="col text-danger text-end">
                             <div>${jogadores[partida.jogador3_id] || "?"}</div>
                             <div>${jogadores[partida.jogador4_id] || "?"}</div>
                         </div>
@@ -251,12 +257,36 @@ document.addEventListener('DOMContentLoaded', function() {
             container.appendChild(card);
 
             $(`#div_partida_${partida.id}`).click(function(){
-                console.log($(this).attr("dados_partida"));
                 preencherFormularioPartida($(this).attr("dados_partida"));
                 ModalPartida.show();
             });
         });
     }
+
+    function getVencedoresPrimeirasDuplas(partidas) {
+        // Pega somente as partidas nos índices 0 e 1 (se existirem)
+        const ultimasDuas = [partidas[0], partidas[1]].filter(Boolean);
+        const vencedores = ultimasDuas.map(partida => {
+            if (partida.placar1 > partida.placar2) {
+            return {
+                partidaId: partida.id,
+                vencedores: [partida.jogador1_id, partida.jogador2_id]
+            };
+            } else if (partida.placar2 > partida.placar1) {
+            return {
+                partidaId: partida.id,
+                vencedores: [partida.jogador3_id, partida.jogador4_id]
+            };
+            } else {
+                return {
+                    partidaId: partida.id,
+                    vencedores: null // empate ou sem resultado
+                };
+            }
+        });
+        return vencedores;
+    }
+
 
     async function deletar_partida($id){
         const dados = {
@@ -372,6 +402,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function administrador() {
+        return window.location.hash === "#adm";
+    }
+
     function preencherFormularioPartida(valores) {
 
         const campos = ["id", "data_hora", "jogador1_id", "jogador2_id", "jogador3_id", "jogador4_id", "placar1", "placar2"];
@@ -411,10 +445,17 @@ document.addEventListener('DOMContentLoaded', function() {
         $("#bt_submit").attr("id_partida", d.id);
         $("#bt_submit").html("Salvar");
         $("#ModalPartida_titulo").html(`Partida id: ${d.id}`);
-        $("#bt-close-partida").fadeOut(0);
-        $("#bt_excluir_partida").attr("id_partida", d.id);
-        $("#bt_excluir_partida").fadeIn(0);
+        
+        if(administrador()) {
+            $("#bt-close-partida").fadeOut(0);
+            $("#bt_excluir_partida").attr("id_partida", d.id);
+            $("#bt_excluir_partida").fadeIn(0);
+        }
     }
+
+    //EXECUÇÃO
+
+    $("#bt_excluir_partida").fadeOut(0);
 
     buscarDados().then(dados => {
         if (dados && dados.data && dados.data.get_jogadores) {
@@ -424,7 +465,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             popularSelectsJogadores(dados.data.get_jogadores);
         }
-        if (dados && dados.data && dados.data.get_partidas) popularCardsPartidas(dados.data.get_partidas, $JOGADORES);
+        if (dados && dados.data && dados.data.get_partidas) {
+            popularCardsPartidas(dados.data.get_partidas, $JOGADORES);
+            $PARTIDAS = dados.data.get_partidas;
+        }
     });
 
     
@@ -454,13 +498,23 @@ document.addEventListener('DOMContentLoaded', function() {
         $("#bt-close-partida").fadeIn(0);
         $("#bt_excluir_partida").fadeOut(0);
 
+        //adicionar jogadores recentes
+        $vencedores = getVencedoresPrimeirasDuplas($PARTIDAS);
+        $("#selectJogador1").val($vencedores[0]['vencedores'][0] ?? 0);
+        $("#selectJogador2").val($vencedores[0]['vencedores'][1] ?? 0);
+        $("#selectJogador3").val($vencedores[1]['vencedores'][0] ?? 0);
+        $("#selectJogador4").val($vencedores[1]['vencedores'][1] ?? 0);
+        $("#placar1, #placar2").val('');
+
         ModalPartida.show();
     });
 
     $("#bt_excluir_partida").click(function(){
-        $id = $(this).attr("id_partida");
-        if (confirm(`Tem certeza que deseja remover partida de ID: ${$id} ?`)){
-            deletar_partida($id);
+        if(administrador()) {
+            $id = $(this).attr("id_partida");
+            if (confirm(`Tem certeza que deseja remover partida de ID: ${$id} ?`)){
+                deletar_partida($id);
+            }
         }
     });
     

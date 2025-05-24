@@ -21,7 +21,13 @@ body {
     min-width: 400px !important;
     max-width: 400px !important;
     max-height: 100px !important;
+    cursor: pointer;
+    background: linear-gradient(0deg, #eee, #ffffff); /* gelo estilizado */
 }
+.cards-partidas:hover {
+    background: linear-gradient(0deg, #b3e5f0, #e1f5fe); /* azul claro */
+}
+
 
 .numero_placar{
     max-width: 60px;
