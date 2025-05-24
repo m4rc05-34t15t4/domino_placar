@@ -500,10 +500,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         //adicionar jogadores recentes
         $vencedores = getVencedoresPrimeirasDuplas($PARTIDAS);
-        $("#selectJogador1").val($vencedores[0]['vencedores'][0] ?? 0);
-        $("#selectJogador2").val($vencedores[0]['vencedores'][1] ?? 0);
-        $("#selectJogador3").val($vencedores[1]['vencedores'][0] ?? 0);
-        $("#selectJogador4").val($vencedores[1]['vencedores'][1] ?? 0);
+        $("#selectJogador1").val($vencedores[0] && $vencedores[0]['vencedores'] && $vencedores[0]['vencedores'][0] ? $vencedores[0]['vencedores'][0] : 0);
+        $("#selectJogador2").val($vencedores[0] && $vencedores[0]['vencedores'] && $vencedores[0]['vencedores'][1] ? $vencedores[0]['vencedores'][1] : 0);
+        $("#selectJogador3").val($vencedores[1] && $vencedores[1]['vencedores'] && $vencedores[1]['vencedores'][0] ? $vencedores[1]['vencedores'][0] : 0);
+        $("#selectJogador4").val($vencedores[1] && $vencedores[1]['vencedores'] && $vencedores[1]['vencedores'][1] ? $vencedores[1]['vencedores'][1] : 0);
         $("#placar1, #placar2").val('');
 
         ModalPartida.show();
