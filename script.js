@@ -97,7 +97,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     if( resultado["resultado"]["success"] && resultado["resultado"]["data"][0]["id"] ){
                         alert("Sucesso na solicitação!");
                         delete $JOGADORES[idt];
-                        renderizarListaJogadores();
+                        location.reload();
+                        //renderizarListaJogadores();
                     }
                     else throw new Error("Houve algum erro!");
                 } catch (erro) {
@@ -216,10 +217,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Verifica se a data/hora foi preenchida
-        if (!dados.dataHora) {
+        /*if (!dados.dataHora) {
             alert("A data e hora da partida devem ser preenchidas.");
             return false;
-        }
+        }*/
 
         return true;
     }
@@ -234,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
             card.className = "cards-partidas card shadow-sm m-2";
 
             const data = new Date(partida.data_hora);
-            const dataFormatada = data.toISOString().slice(0, 16).replace("T", " ");
+            const dataFormatada = data.toISOString().slice(0, 10).replace("T", " ");
             card.innerHTML = `
                 <div id="div_partida_${partida.id}" dados_partida="${Object.values(partida)}" class="card-partida card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -243,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div>${jogadores[partida.jogador2_id] || "?"}</div>
                         </div>
                         <div class="col d-flex flex-column justify-content-between align-items-center">
-                            <small class="text-muted">${dataFormatada}</small>
+                            <small class="text-muted">${dataFormatada} (${partida.id})</small>
                             <div class="fw-bold fs-4">${partida.placar1} x ${partida.placar2}</div>
                         </div>
                         <div class="col text-danger text-end">
@@ -292,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const dados = {
             id: $id,
             acao: 'DELETE', 
-            dataHora: document.getElementById("dataHora").value,
+            //dataHora: document.getElementById("dataHora").value,
             jogador1: document.getElementById("selectJogador1").value,
             jogador2: document.getElementById("selectJogador2").value,
             jogador3: document.getElementById("selectJogador3").value,
@@ -350,7 +351,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if( resultado["resultado"]["success"] && resultado["resultado"]["data"][0]["id"] ){
                     $JOGADORES[resultado["resultado"]["data"][0]["id"]] = dados.nome;
                     alert("Sucesso na solicitação!");
-                    renderizarListaJogadores();
+                    //renderizarListaJogadores();
+                    location.reload();
                 }
                 else throw new Error("Houve algum erro!");
                 
@@ -368,7 +370,8 @@ document.addEventListener('DOMContentLoaded', function() {
         var dados = {
             id: $("#bt_submit").attr("id_partida"),
             acao: "INSERT", 
-            dataHora: document.getElementById("dataHora").value,
+            //dataHora: document.getElementById("dataHora").value,
+            jogadorbct: get_jogador_buceta_partida(), 
             jogador1: document.getElementById("selectJogador1").value,
             jogador2: document.getElementById("selectJogador2").value,
             jogador3: document.getElementById("selectJogador3").value,
@@ -378,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         if(parseInt(dados['id']) > 0) dados['acao'] = 'UPDATE';
         try {
-            if(validarDados(dados)){
+            if( ( (dados['acao'] == 'UPDATE' && administrador() ) || dados['acao'] != 'UPDATE' ) && validarDados(dados) ){
                 const response = await fetch("php/salvar_partida.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -427,9 +430,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Preencher data e hora
-        const now = new Date(d.data_hora+"".replace(' ', 'T').slice(0, 16));
-        const localDateTime = now.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
-        document.getElementById('dataHora').value = localDateTime;
+        //const now = new Date(d.data_hora+"".replace(' ', 'T').slice(0, 16));
+        //const localDateTime = now.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
+        //document.getElementById('dataHora').value = localDateTime;
 
         // Preencher selects
         document.getElementById("selectJogador1").value = d.jogador1_id;
@@ -444,13 +447,20 @@ document.addEventListener('DOMContentLoaded', function() {
         // Preencher id
         $("#bt_submit").attr("id_partida", d.id);
         $("#bt_submit").html("Salvar");
-        $("#ModalPartida_titulo").html(`Partida id: ${d.id}`);
+        $("#ModalPartida_titulo").html(`Partida id: ${d.id} - ${d.data_hora}`);
         
         if(administrador()) {
             $("#bt-close-partida").fadeOut(0);
             $("#bt_excluir_partida").attr("id_partida", d.id);
             $("#bt_excluir_partida").fadeIn(0);
         }
+    }
+
+    function get_jogador_buceta_partida(){
+        $id_jbct = $('.img_merda[src="../img/merda-fill.png"]')[0];
+        if($id_jbct) $id_jbct = parseInt($id_jbct.getAttribute("id").split("_")[2]);
+        else  $id_jbct = 0;
+        return $id_jbct;
     }
 
     //EXECUÇÃO
@@ -474,6 +484,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     //EVENTOS
 
+
+    $('.img_merda').click(function(){
+        if ($(this).attr('src').includes('merda-fill.png')) $(this).attr('src', '../img/merda.png');
+        else {
+            $('.img_merda').attr('src', '../img/merda.png');
+            $(this).attr('src', '../img/merda-fill.png');
+        }
+    });
+
     document.getElementById("formPartida").addEventListener("submit", async function(e) {
         e.preventDefault(); // Impede o envio tradicional
         cadastrar_partida();
@@ -487,9 +506,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     $("#add_partida").click(function(){
 
-        const now = new Date();
-        const localDateTime = now.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
-        document.getElementById('dataHora').value = localDateTime;
+        //const now = new Date();
+        //const localDateTime = now.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
+        //document.getElementById('dataHora').value = localDateTime;
 
         // Preencher id
         $("#bt_submit").attr("id_partida", "0");

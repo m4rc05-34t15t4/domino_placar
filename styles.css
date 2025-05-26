@@ -38,3 +38,10 @@ body {
     align-items: center; /* Faz o conteúdo ocupar toda a altura da célula */
     justify-content: center; /* Opcional: centraliza horizontalmente */
 }
+
+.img_merda{
+    max-width: 35px;
+    min-width: 35px;
+    width: 35px;
+    cursor: pointer;
+}

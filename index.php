@@ -109,26 +109,32 @@
                         <form id="formPartida">
                             <div class="modal-body">
                                 <table class="text-center table table-borderless w-100">
-                                    <tr>
+                                    <!--<tr>
                                         <td colspan="2" class="w-100">
                                             <div>
                                                 <input type="datetime-local" class="form-control" id="dataHora" required>
                                             </div>
                                         </td>
-                                    </tr>
+                                    </tr>-->
                                     <tr>
                                         <td class="pb-2">
                                             <div id="div-form-dupla1">
                                                 <div>
-                                                    <select id="selectJogador1" class="form-select" required></select>
-                                                    <select id="selectJogador2" class="form-select" required></select>
+                                                    <div class="d-flex flex-rown">
+                                                        <select id="selectJogador1" class="form-select w-fill" required></select>
+                                                        <img id="merda_jogador_1" class="img_merda m-1 ms-3" src="../img/merda.png"/>
+                                                    </div>
+                                                    <div class="d-flex flex-rown">
+                                                        <select id="selectJogador2" class="form-select" required></select>
+                                                        <img id="merda_jogador_2" class="img_merda m-1 ms-3" src="../img/merda.png"/>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td rowspan="2" class="td-content-h">
-                                            <div class="d-flex flex-column justify-content-between align-items-center">
+                                            <div class="d-flex flex-column justify-content-around align-items-center h-100 mt-3">
                                                 <input type="number" class="numero_placar form-control fs-4" id="placar1" min="0" max="6" required>
-                                                <div class="align-self-center fs-1 w-100" style="transform: translateY(-5px);">x</div>
+                                                <div class="align-self-center fs-1 w-100" style="transform: translateY(-5px);">X</div>
                                                 <input type="number" class="numero_placar form-control fs-4" id="placar2" min="0" max="6" required>
                                             </div>
                                         </td>
@@ -137,8 +143,14 @@
                                         <td class="pt-2">
                                             <div id="div-form-dupla2 mt-3">
                                                 <div>
-                                                    <select id="selectJogador3" class="form-select" required></select>
-                                                    <select id="selectJogador4" class="form-select" required></select>
+                                                    <div class="d-flex flex-rown">
+                                                        <select id="selectJogador3" class="form-select" required></select>
+                                                        <img id="merda_jogador_3" class="img_merda m-1 ms-3" src="../img/merda.png"/>
+                                                    </div>
+                                                    <div class="d-flex flex-rown">
+                                                        <select id="selectJogador4" class="form-select" required></select>
+                                                        <img id="merda_jogador_4" class="img_merda m-1 ms-3" src="../img/merda.png"/>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>

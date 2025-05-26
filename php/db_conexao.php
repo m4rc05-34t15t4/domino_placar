@@ -3,9 +3,9 @@
     // Configurações do banco de dados PostgreSQL
     $host = 'localhost';  // Endereço do servidor
     $dbname = 'jogos';  // Nome do banco de dados
-    $port = '5433'; // porta
+    $port = '5432'; // porta
     $username = 'postgres';  // Usuário do banco de dados
-    $password = 'postgres';  // Senha do banco de dados
+    $password = 'admin';  // Senha do banco de dados
 
     // Função para realizar a conexão com o banco de dados PostgreSQL
     function connectToDatabase() {
