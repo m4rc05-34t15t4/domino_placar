@@ -299,6 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: $id,
             acao: 'DELETE', 
             //dataHora: document.getElementById("dataHora").value,
+            jogadorbct: get_jogador_buceta_partida(), 
             jogador1: document.getElementById("selectJogador1").value,
             jogador2: document.getElementById("selectJogador2").value,
             jogador3: document.getElementById("selectJogador3").value,
@@ -454,8 +455,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Preencher merda
         if(d.jogadorbct != null && d.jogadorbct > 0){
-            $('.img_merda').attr('src', '../img/merda.png');
-            $(`#merda_jogador_${d.jogadorbct}`).attr('src', '../img/merda-fill.png');
+            $('.img_merda').attr('src', 'img/merda.png');
+            $(`#merda_jogador_${d.jogadorbct}`).attr('src', 'img/merda-fill.png');
 
         }
 
@@ -472,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function get_jogador_buceta_partida(){
-        $id_jbct = $('.img_merda[src="../img/merda-fill.png"]')[0];
+        $id_jbct = $('.img_merda[src="img/merda-fill.png"]')[0];
         if($id_jbct) $id_jbct = parseInt($id_jbct.getAttribute("id").split("_")[2]);
         else  $id_jbct = 0;
         return $id_jbct;
@@ -501,10 +502,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     $('.img_merda').click(function(){
-        if ($(this).attr('src').includes('merda-fill.png')) $(this).attr('src', '../img/merda.png');
+        if ($(this).attr('src').includes('merda-fill.png')) $(this).attr('src', 'img/merda.png');
         else {
-            $('.img_merda').attr('src', '../img/merda.png');
-            $(this).attr('src', '../img/merda-fill.png');
+            $('.img_merda').attr('src', 'img/merda.png');
+            $(this).attr('src', 'img/merda-fill.png');
         }
     });
 

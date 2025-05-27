@@ -122,11 +122,11 @@
                                                 <div>
                                                     <div class="d-flex flex-rown">
                                                         <select id="selectJogador1" class="form-select w-fill" required></select>
-                                                        <img id="merda_jogador_1" class="img_merda m-1 ms-3" src="../img/merda.png"/>
+                                                        <img id="merda_jogador_1" class="img_merda m-1 ms-3" src="img/merda.png"/>
                                                     </div>
                                                     <div class="d-flex flex-rown">
                                                         <select id="selectJogador2" class="form-select" required></select>
-                                                        <img id="merda_jogador_2" class="img_merda m-1 ms-3" src="../img/merda.png"/>
+                                                        <img id="merda_jogador_2" class="img_merda m-1 ms-3" src="img/merda.png"/>
                                                     </div>
                                                 </div>
                                             </div>
@@ -145,11 +145,11 @@
                                                 <div>
                                                     <div class="d-flex flex-rown">
                                                         <select id="selectJogador3" class="form-select" required></select>
-                                                        <img id="merda_jogador_3" class="img_merda m-1 ms-3" src="../img/merda.png"/>
+                                                        <img id="merda_jogador_3" class="img_merda m-1 ms-3" src="img/merda.png"/>
                                                     </div>
                                                     <div class="d-flex flex-rown">
                                                         <select id="selectJogador4" class="form-select" required></select>
-                                                        <img id="merda_jogador_4" class="img_merda m-1 ms-3" src="../img/merda.png"/>
+                                                        <img id="merda_jogador_4" class="img_merda m-1 ms-3" src="img/merda.png"/>
                                                     </div>
                                                 </div>
                                             </div>
