@@ -59,3 +59,18 @@ body {
     color: #000 !important;
     border-color: #f1c40f !important;
   }
+
+.vitoria, .derrota, .medalha {
+    width: 30px;
+    height: 30px;
+    background-image: url("img/vitoria.png");
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+.derrota{
+    background-image: none;
+}
+.medalha {
+    height: 35px;
+    background-image: url("img/medalha.png");
+}

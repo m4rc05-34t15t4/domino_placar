@@ -236,6 +236,23 @@ document.addEventListener('DOMContentLoaded', function() {
         return `${diaFormatado}/${mesFormatado}/${anoFormatado} - ${diaSemana}`;
     }
     
+    function verificar_vencedor(partida){
+        $vencedor = "";
+        switch (partida.jogadorbct) {
+            case "1":
+            case "2":
+                $vencedor = "B";
+                break;
+            case "3":
+            case "4":
+                $vencedor = "A";
+                break;
+            default:
+                if(partida.placar1 != partida.placar2) $vencedor = partida.placar1 > partida.placar2 ? "A" : "B";
+                break;
+        }
+        return $vencedor;
+    }
 
     function popularCardsPartidas(partidas, jogadores) {
         const container = document.getElementById("container-partidas"); // certifique-se de que existe uma div com esse id
@@ -243,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $data_dia = "";
         partidas.forEach(partida => {
             const card = document.createElement("div");
-            card.className = "cards-partidas card shadow-sm m-2";
+            card.className = "cards-partidas card shadow-sm m-2 p-0";
             
             //hr data
             if(String(partida.data_hora).slice(0, 10) != $data_dia) {
@@ -266,17 +283,23 @@ document.addEventListener('DOMContentLoaded', function() {
             $m2 = partida.jogadorbct == 2 ? $merda : '';
             $m3 = partida.jogadorbct == 3 ? $merda : '';
             $m4 = partida.jogadorbct == 4 ? $merda : '';
+
+            $placar = `${partida.placar1} x ${partida.placar2}`;
+            $v_cencedor = verificar_vencedor(partida);
+            $medalha = partida.jogadas != null ? "medalha" : "vitoria";
+            if($v_cencedor == "A") $placar = `<div class="${$medalha}"></div>${$placar}<div class="derrota"></div>`;
+            else if($v_cencedor == "B") $placar = `<div class="derrota"></div>${$placar}<div class="${$medalha}"></div>`;
             
             card.innerHTML = `
-                <div id="div_partida_${partida.id}" dados_partida="${Object.values(partida)}" class="card-partida card-body">
+                <div id="div_partida_${partida.id}" dados_partida="${Object.values(partida)}" class="card-partida card-body m-0">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="col text-primary">
                             <div class="d-flex flex-rown justify-content-start align-items-center">${$m1} ${jogadores[partida.jogador1_id] || "?"}</div>
                             <div class="d-flex flex-rown justify-content-start align-items-center">${$m2} ${jogadores[partida.jogador2_id] || "?"}</div>
                         </div>
-                        <div class="col d-flex flex-column justify-content-between align-items-center">
+                        <div class="col d-flex flex-column justify-content-center align-items-center">
                             <small class="text-muted">${dataFormatada} (${partida.id})</small>
-                            <div class="fw-bold fs-4">${partida.placar1} x ${partida.placar2}</div>
+                            <div class="fw-bold fs-4 d-flex flex-rown justify-content-center align-items-center">${$placar}</div>
                         </div>
                         <div class="col text-danger text-end">
                             <div class="d-flex flex-rown justify-content-end align-items-center">${jogadores[partida.jogador3_id] || "?"} ${$m3}</div>
