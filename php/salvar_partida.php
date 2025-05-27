@@ -53,7 +53,8 @@ try {
                 jogador3_id = $jogador3,
                 jogador4_id = $jogador4,
                 placar1 = $placar1,
-                placar2 = $placar2 
+                placar2 = $placar2,
+                jogadorbct = $jogadorbct 
                 WHERE id = $id_partida RETURNING *;";
             break;
         case 'DELETE':

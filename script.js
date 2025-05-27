@@ -236,20 +236,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = new Date(partida.data_hora);
             const dataFormatada = data.toISOString().slice(0, 10).replace("T", " ");
+            $merda = `<img class="img_merda_p mx-1" src="img/merda-fill.png"/>`;
+            $m1 = partida.jogadorbct == 1 ? $merda : '';
+            $m2 = partida.jogadorbct == 2 ? $merda : '';
+            $m3 = partida.jogadorbct == 3 ? $merda : '';
+            $m4 = partida.jogadorbct == 4 ? $merda : '';
             card.innerHTML = `
                 <div id="div_partida_${partida.id}" dados_partida="${Object.values(partida)}" class="card-partida card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="col text-primary">
-                            <div>${jogadores[partida.jogador1_id] || "?"}</div>
-                            <div>${jogadores[partida.jogador2_id] || "?"}</div>
+                            <div class="d-flex flex-rown justify-content-start align-items-center">${$m1} ${jogadores[partida.jogador1_id] || "?"}</div>
+                            <div class="d-flex flex-rown justify-content-start align-items-center">${$m2} ${jogadores[partida.jogador2_id] || "?"}</div>
                         </div>
                         <div class="col d-flex flex-column justify-content-between align-items-center">
                             <small class="text-muted">${dataFormatada} (${partida.id})</small>
                             <div class="fw-bold fs-4">${partida.placar1} x ${partida.placar2}</div>
                         </div>
                         <div class="col text-danger text-end">
-                            <div>${jogadores[partida.jogador3_id] || "?"}</div>
-                            <div>${jogadores[partida.jogador4_id] || "?"}</div>
+                            <div class="d-flex flex-rown justify-content-end align-items-center">${jogadores[partida.jogador3_id] || "?"} ${$m3}</div>
+                            <div class="d-flex flex-rown justify-content-end align-items-center">${jogadores[partida.jogador4_id] || "?"} ${$m4}</div>
                         </div>
                     </div>
                 </div>
@@ -365,6 +370,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function cadastrar_partida(){
+
+        //$select_jbct = get_jogador_buceta_partida();
+        //$jbct = $select_jbct > 0 ? $(`#selectJogador${$select_jbct}`).val() : 0;
         
         // Cria um objeto com os dados do formulário
         var dados = {
@@ -411,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function preencherFormularioPartida(valores) {
 
-        const campos = ["id", "data_hora", "jogador1_id", "jogador2_id", "jogador3_id", "jogador4_id", "placar1", "placar2"];
+        const campos = ["id", "data_hora", "jogador1_id", "jogador2_id", "jogador3_id", "jogador4_id", "placar1", "placar2", "jogadorbct"];
 
         // Transforma a string em array (suportando aspas simples)
         const v = valores.split(',').map(v => {
@@ -443,6 +451,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Preencher placares
         document.getElementById("placar1").value = d.placar1;
         document.getElementById("placar2").value = d.placar2;
+
+        // Preencher merda
+        if(d.jogadorbct != null && d.jogadorbct > 0){
+            $('.img_merda').attr('src', '../img/merda.png');
+            $(`#merda_jogador_${d.jogadorbct}`).attr('src', '../img/merda-fill.png');
+
+        }
 
         // Preencher id
         $("#bt_submit").attr("id_partida", d.id);
