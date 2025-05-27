@@ -53,3 +53,9 @@ body {
     min-height: 20px;
     height: 20px;
 }
+
+.btn-gold {
+    background-color: #f9d342 !important;
+    color: #000 !important;
+    border-color: #f1c40f !important;
+  }

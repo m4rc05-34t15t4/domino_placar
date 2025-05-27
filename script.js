@@ -225,14 +225,39 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     }
 
+    function formatarDataISO(dataISO) {
+        const [ano, mes, dia] = dataISO.split("-").map(Number);
+        const data = new Date(ano, mes - 1, dia); // forçando local time
+        const diaFormatado = String(data.getDate()).padStart(2, '0');
+        const mesFormatado = String(data.getMonth() + 1).padStart(2, '0');
+        const anoFormatado = data.getFullYear();
+        const dias = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+        const diaSemana = dias[data.getDay()];
+        return `${diaFormatado}/${mesFormatado}/${anoFormatado} - ${diaSemana}`;
+    }
+    
 
     function popularCardsPartidas(partidas, jogadores) {
         const container = document.getElementById("container-partidas"); // certifique-se de que existe uma div com esse id
         container.innerHTML = ""; // Limpa o conteúdo anterior
-
+        $data_dia = "";
         partidas.forEach(partida => {
             const card = document.createElement("div");
             card.className = "cards-partidas card shadow-sm m-2";
+            
+            //hr data
+            if(String(partida.data_hora).slice(0, 10) != $data_dia) {
+                $data_dia = String(partida.data_hora).slice(0, 10);
+                $("#container-partidas").append(`
+                    <div class="d-flex align-items-center my-1 w-100 my-3">
+                        <div class="flex-grow-1 border-top"></div>
+                        <div class="px-3 text-nowrap text-muted small">
+                            ${formatarDataISO($data_dia)}
+                        </div>
+                        <div class="flex-grow-1 border-top"></div>
+                    </div>
+                `);
+            }
 
             const data = new Date(partida.data_hora);
             const dataFormatada = data.toISOString().slice(0, 10).replace("T", " ");
@@ -241,6 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
             $m2 = partida.jogadorbct == 2 ? $merda : '';
             $m3 = partida.jogadorbct == 3 ? $merda : '';
             $m4 = partida.jogadorbct == 4 ? $merda : '';
+            
             card.innerHTML = `
                 <div id="div_partida_${partida.id}" dados_partida="${Object.values(partida)}" class="card-partida card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -299,6 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: $id,
             acao: 'DELETE', 
             //dataHora: document.getElementById("dataHora").value,
+            jogadas: getJogadasSelecionadas().join(","),
             jogadorbct: get_jogador_buceta_partida(), 
             jogador1: document.getElementById("selectJogador1").value,
             jogador2: document.getElementById("selectJogador2").value,
@@ -380,6 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: $("#bt_submit").attr("id_partida"),
             acao: "INSERT", 
             //dataHora: document.getElementById("dataHora").value,
+            jogadas: getJogadasSelecionadas().join(';'),
             jogadorbct: get_jogador_buceta_partida(), 
             jogador1: document.getElementById("selectJogador1").value,
             jogador2: document.getElementById("selectJogador2").value,
@@ -418,9 +446,30 @@ document.addEventListener('DOMContentLoaded', function() {
         return window.location.hash === "#adm";
     }
 
+    function aplicarSelecaoJogadas(texto) {
+
+        if(texto != null && texto != "" && texto != undefined){
+            // Converte a string em array, removendo espaços
+            const jogadasSelecionadas = String(texto).split(';').map(j => j.trim());
+        
+            document.querySelectorAll('.btn-check').forEach(input => {
+                const label = document.querySelector(`label[for="${input.id}"]`);
+                const jogada = input.getAttribute('jogada');
+
+                if (jogadasSelecionadas.includes(jogada)) {
+                    input.checked = true;
+                    label.classList.add('btn-gold');
+                } else {
+                    input.checked = false;
+                    label.classList.remove('btn-gold');
+                }
+            });
+        }
+      }
+
     function preencherFormularioPartida(valores) {
 
-        const campos = ["id", "data_hora", "jogador1_id", "jogador2_id", "jogador3_id", "jogador4_id", "placar1", "placar2", "jogadorbct"];
+        const campos = ["id", "data_hora", "jogador1_id", "jogador2_id", "jogador3_id", "jogador4_id", "placar1", "placar2", "jogadorbct", "jogadas"];
 
         // Transforma a string em array (suportando aspas simples)
         const v = valores.split(',').map(v => {
@@ -429,7 +478,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (v.startsWith("'") && v.endsWith("'")) {
                 return v.slice(1, -1); // remove aspas
             }
-            return Number(v); // converte para número se possível
+            return v;
         });
 
         // Cria um objeto com os pares campo:valor
@@ -457,13 +506,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if(d.jogadorbct != null && d.jogadorbct > 0){
             $('.img_merda').attr('src', 'img/merda.png');
             $(`#merda_jogador_${d.jogadorbct}`).attr('src', 'img/merda-fill.png');
-
         }
+
+        //Preencher jogadas
+        aplicarSelecaoJogadas(d.jogadas);
 
         // Preencher id
         $("#bt_submit").attr("id_partida", d.id);
         $("#bt_submit").html("Salvar");
-        $("#ModalPartida_titulo").html(`Partida id: ${d.id} - ${d.data_hora}`);
+        $("#ModalPartida_titulo").html(`Partida id: ${d.id} - ${d.data_hora.slice(0, 16)}`);
         
         if(administrador()) {
             $("#bt-close-partida").fadeOut(0);
@@ -476,8 +527,17 @@ document.addEventListener('DOMContentLoaded', function() {
         $id_jbct = $('.img_merda[src="img/merda-fill.png"]')[0];
         if($id_jbct) $id_jbct = parseInt($id_jbct.getAttribute("id").split("_")[2]);
         else  $id_jbct = 0;
+        console.log($id_jbct);
         return $id_jbct;
     }
+
+    function getJogadasSelecionadas() {
+        const selecionados = [];
+        document.querySelectorAll('.btn-check:checked').forEach(input => {
+          selecionados.push(input.getAttribute('jogada'));
+        });
+        return selecionados;
+      }
 
     //EXECUÇÃO
 
@@ -500,6 +560,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     //EVENTOS
 
+    // adiciona classe dourada nos selecionados
+    document.querySelectorAll('.btn-check').forEach(input => {
+        input.addEventListener('change', () => {
+            document.querySelectorAll('.btn-check').forEach(i => {
+                const label = document.querySelector(`label[for="${i.id}"]`);
+                if (i.checked) label.classList.add('btn-gold');
+                else label.classList.remove('btn-gold');
+            });
+        });
+    });
 
     $('.img_merda').click(function(){
         if ($(this).attr('src').includes('merda-fill.png')) $(this).attr('src', 'img/merda.png');
@@ -540,6 +610,13 @@ document.addEventListener('DOMContentLoaded', function() {
         $("#selectJogador3").val($vencedores[1] && $vencedores[1]['vencedores'] && $vencedores[1]['vencedores'][0] ? $vencedores[1]['vencedores'][0] : 0);
         $("#selectJogador4").val($vencedores[1] && $vencedores[1]['vencedores'] && $vencedores[1]['vencedores'][1] ? $vencedores[1]['vencedores'][1] : 0);
         $("#placar1, #placar2").val('');
+
+        //BT jogadas
+        document.querySelectorAll('.btn-check').forEach(input => {
+            input.checked = false;
+            const label = document.querySelector(`label[for="${input.id}"]`);
+            label.classList.remove('btn-gold');
+        });
 
         ModalPartida.show();
     });

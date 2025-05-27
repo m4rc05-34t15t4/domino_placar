@@ -26,7 +26,7 @@
         $sql = "SELECT *
                 FROM partida
                 WHERE id = $id_partida
-                ORDER BY data_hora DESC;";
+                ORDER BY id DESC, data_hora DESC;";
         $r = executeQuery($sql);
         if ( $r["success"] && count($r["data"]) > 0 ) $resultado['get_partidas'] = $r["data"];
     }

@@ -105,8 +105,8 @@
                             </svg>
                         </button>
                     </div>
-                    <div class="modal-body">
-                        <form id="formPartida">
+                    <div class="modal-body mt-0 pt-0">
+                        <form id="formPartida" class="mt-0 pt-0">
                             <div class="modal-body">
                                 <table class="text-center table table-borderless w-100">
                                     <!--<tr>
@@ -116,6 +116,16 @@
                                             </div>
                                         </td>
                                     </tr>-->
+                                    <tr>
+                                        <td colspan="2">
+                                            <div class="d-flex justify-content-around">
+                                                <input type="checkbox" class="btn-check" id="jogadaC" autocomplete="off" jogada="C">
+                                                <label class="btn btn-light w-25" for="jogadaC">Cruzada</label>
+                                                <input type="checkbox" class="btn-check" id="jogadaL" autocomplete="off" jogada="L">
+                                                <label class="btn btn-light w-25" for="jogadaL">Lá e Lô</label>
+                                            </div>
+                                        </td>
+                                    </tr>
                                     <tr>
                                         <td class="pb-2">
                                             <div id="div-form-dupla1">
@@ -141,7 +151,7 @@
                                     </tr>
                                     <tr>
                                         <td class="pt-2">
-                                            <div id="div-form-dupla2 mt-3">
+                                            <div id="div-form-dupla2 my-2">
                                                 <div>
                                                     <div class="d-flex flex-rown">
                                                         <select id="selectJogador3" class="form-select" required></select>
