@@ -12,8 +12,8 @@
     </head>
     
     <body>
-        <div class="container-fluid min-vh-100 bg-light py-4 px-3">
-            <header class="d-flex justify-content-around align-items-center flex-wrap mb-4">
+        <div class="main-container container-fluid min-vh-100 bg-light">
+            <header class="d-flex justify-content-around align-items-center flex-wrap m-2 mt-3">
                 <h1 class="h3 text-dark d-flex align-items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy text-warning" aria-hidden="true">
                         <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
@@ -48,55 +48,16 @@
                 </div>
             </header>
             
-            <div id="container-partidas" class="d-flex justify-content-center align-items-center flex-wrap">
+            <div id="container-partidas" class="div_cards-conteudo d-flex justify-content-center align-items-center flex-wrap w-fill h-fill"></div>
 
-                <div class="cards-partidas card shadow-sm m-2">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="text-primary">
-                                <div>João</div>
-                                <div>Carlos</div>
-                            </div>
-                            <div class="d-flex flex-column justify-content-between align-items-center">
-                                <small class="text-muted">2025-05-22</small>
-                                <div class="fw-bold fs-4">300 x 250</div>
-                            </div>
-                            <div class="text-danger text-end">
-                                <div>Ana</div>
-                                <div>Bruna</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="cards-partidas card shadow-sm m-2">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="text-primary">
-                                <div>Pedro</div>
-                                <div>Rafa</div>
-                            </div>
-                            <div class="d-flex flex-column justify-content-between align-items-center">
-                                <small class="text-muted">2025-05-20</small>
-                                <div class="fw-bold fs-4">400 x 360</div>
-                            </div>
-                            <div class="text-danger text-end">
-                                <div>Léo</div>
-                                <div>Tiago</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
         </div>
 
         <!-- Modal -->
         <div class="modal fade" id="ModalPartida" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <div class="modal-header d-flex flex-rown justify-content-between align-items-center">
-                        <h1 class="modal-title fs-5" id="ModalPartida_titulo">Nova Partida</h1>
+                    <div class="modal-header d-flex flex-rown justify-content-between align-items-center bg-primary text-white">
+                        <h1 class="modal-title fs-4 text-center w-100" id="ModalPartida_titulo">Nova Partida</h1>
                         <button id="bt-close-partida" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         <button id="bt_excluir_partida" id_partida="0" class="btn btn-outline-danger">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
@@ -106,23 +67,16 @@
                         </button>
                     </div>
                     <div class="modal-body mt-0 pt-0">
-                        <form id="formPartida" class="mt-0 pt-0">
+                        <form id="formPartida" class="mt-0 py-0">
                             <div class="modal-body">
-                                <table class="text-center table table-borderless w-100">
-                                    <!--<tr>
-                                        <td colspan="2" class="w-100">
-                                            <div>
-                                                <input type="datetime-local" class="form-control" id="dataHora" required>
-                                            </div>
-                                        </td>
-                                    </tr>-->
+                                <table class="text-center table table-borderless w-100 m-0">
                                     <tr>
                                         <td colspan="2">
                                             <div class="d-flex justify-content-around">
                                                 <input type="checkbox" class="btn-check" id="jogadaC" autocomplete="off" jogada="C">
-                                                <label class="btn btn-light w-25" for="jogadaC">Cruzada</label>
+                                                <label class="bt-jogada btn btn-light" for="jogadaC">Cruzada</label>
                                                 <input type="checkbox" class="btn-check" id="jogadaL" autocomplete="off" jogada="L">
-                                                <label class="btn btn-light w-25" for="jogadaL">Lá e Lô</label>
+                                                <label class="bt-jogada btn btn-light" for="jogadaL">Lá e Lô</label>
                                             </div>
                                         </td>
                                     </tr>
@@ -151,7 +105,7 @@
                                     </tr>
                                     <tr>
                                         <td class="pt-2">
-                                            <div id="div-form-dupla2 my-2">
+                                            <div id="div-form-dupla2">
                                                 <div>
                                                     <div class="d-flex flex-rown">
                                                         <select id="selectJogador3" class="form-select" required></select>
@@ -166,11 +120,10 @@
                                         </td>
                                     </tr>
                                 </table>
-
                             </div>
                             <div class="modal-footer d-flex flex-rown justify-content-around align-items-center">
-                              <button type="button" class="btn btn-secondary fs-5" data-bs-dismiss="modal">Cancelar</button>
-                              <button id="bt_submit" id_partida="0" type="submit" class="btn btn-primary fs-5">Cadastrar</button>
+                                <button type="button" class="bt-rodape-modal btn btn-secondary fs-5" data-bs-dismiss="modal">Cancelar</button>
+                                <button id="bt_submit" id_partida="0" type="submit" class="bt-rodape-modal btn btn-primary fs-5">Cadastrar</button>
                             </div>
                         </form>
                     </div>

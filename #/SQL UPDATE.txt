@@ -1,3 +1,242 @@
 --27/05/25 11:45
 
 --ALTER TABLE partida ADD COLUMN jogadas TEXT;
+
+
+--28/05/25 10:42
+
+CREATE OR REPLACE VIEW vw_partida_com_vencedor AS
+SELECT *,
+    CASE
+        -- 1. Se houver valor em jogadorbct, usamos isso para definir o perdedor
+        WHEN jogadorbct IS NOT NULL THEN
+            CASE 
+                WHEN jogadorbct IN (1, 2) THEN 'B'  -- jogador da dupla A perdeu → dupla B venceu
+                WHEN jogadorbct IN (3, 4) THEN 'A'  -- jogador da dupla B perdeu → dupla A venceu
+				WHEN placar1 > placar2 THEN 'A'
+                WHEN placar2 > placar1 THEN 'B'
+                ELSE 'AB'  -- empate
+            END
+        -- 2. Se jogadorbct for NULL, usamos os placares
+        ELSE
+            CASE 
+                WHEN placar1 > placar2 THEN 'A'
+                WHEN placar2 > placar1 THEN 'B'
+                ELSE 'AB'  -- empate
+            END
+    END AS dupla_vencedora
+FROM partida;
+
+
+CREATE OR REPLACE VIEW vw_jogador_estatistica AS
+SELECT 
+    j.id,
+    j.nome,
+    COUNT(p.id) AS partidas,
+
+    -- Vitórias
+    SUM(
+        CASE 
+            WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A' THEN 1
+            WHEN (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B' THEN 1
+            ELSE 0
+        END
+    ) AS vitorias,
+
+    -- Derrotas
+    SUM(
+        CASE 
+            WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'B' THEN 1
+            WHEN (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'A' THEN 1
+            ELSE 0
+        END
+    ) AS derrotas,
+
+    -- Empates
+    SUM(
+        CASE 
+            WHEN (j.id IN (p.jogador1_id, p.jogador2_id, p.jogador3_id, p.jogador4_id)) AND p.dupla_vencedora = 'AB' THEN 1
+            ELSE 0
+        END
+    ) AS empates,
+
+    -- Merda
+    SUM(
+        CASE
+            WHEN p.jogadorbct IS NOT NULL AND
+                (
+                    (p.jogadorbct = 1 AND j.id = p.jogador1_id) OR
+                    (p.jogadorbct = 2 AND j.id = p.jogador2_id) OR
+                    (p.jogadorbct = 3 AND j.id = p.jogador3_id) OR
+                    (p.jogadorbct = 4 AND j.id = p.jogador4_id)
+                )
+            THEN 1
+            ELSE 0
+        END
+    ) AS merda,
+
+    -- Mérito
+    SUM(
+        CASE
+            WHEN
+                (
+                    ((j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A') OR
+                    ((j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B')
+                )
+                AND (p.jogadas ILIKE '%C%' OR p.jogadas ILIKE '%L%')
+            THEN 1
+            ELSE 0
+        END
+    ) AS merito,
+
+    -- Laelo
+    SUM(
+        CASE
+            WHEN
+                (
+                    ((j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A') OR
+                    ((j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B')
+                )
+                AND p.jogadas ILIKE '%L%'
+            THEN 1
+            ELSE 0
+        END
+    ) AS laelo,
+
+    -- Cruzada
+    SUM(
+        CASE
+            WHEN
+                (
+                    ((j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A') OR
+                    ((j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B')
+                )
+                AND p.jogadas ILIKE '%C%'
+            THEN 1
+            ELSE 0
+        END
+    ) AS cruzada
+
+FROM jogador j
+LEFT JOIN vw_partida_com_vencedor p 
+    ON j.id IN (p.jogador1_id, p.jogador2_id, p.jogador3_id, p.jogador4_id)
+GROUP BY j.id, j.nome
+ORDER BY partidas DESC;
+
+
+CREATE OR REPLACE VIEW vw_dupla_estatistica AS
+SELECT
+    -- Dupla ID ordenado por nome (menor nome primeiro)
+    CASE
+        WHEN j1.nome < j2.nome THEN j1.id || ',' || j2.id
+        ELSE j2.id || ',' || j1.id
+    END AS id,
+
+    -- Nomes ordenados alfabeticamente
+    CASE
+        WHEN j1.nome < j2.nome THEN j1.nome || ',' || j2.nome
+        ELSE j2.nome || ',' || j1.nome
+    END AS nome,
+
+    COUNT(*) AS partidas,
+
+    -- Vitórias
+    SUM(
+        CASE 
+            WHEN (p.jogador1_id = j1.id AND p.jogador2_id = j2.id AND p.dupla_vencedora = 'A') OR
+                 (p.jogador2_id = j1.id AND p.jogador1_id = j2.id AND p.dupla_vencedora = 'A') OR
+                 (p.jogador3_id = j1.id AND p.jogador4_id = j2.id AND p.dupla_vencedora = 'B') OR
+                 (p.jogador4_id = j1.id AND p.jogador3_id = j2.id AND p.dupla_vencedora = 'B')
+            THEN 1 ELSE 0
+        END
+    ) AS vitorias,
+
+    -- Derrotas
+    SUM(
+        CASE 
+            WHEN (p.jogador1_id = j1.id AND p.jogador2_id = j2.id AND p.dupla_vencedora = 'B') OR
+                 (p.jogador2_id = j1.id AND p.jogador1_id = j2.id AND p.dupla_vencedora = 'B') OR
+                 (p.jogador3_id = j1.id AND p.jogador4_id = j2.id AND p.dupla_vencedora = 'A') OR
+                 (p.jogador4_id = j1.id AND p.jogador3_id = j2.id AND p.dupla_vencedora = 'A')
+            THEN 1 ELSE 0
+        END
+    ) AS derrotas,
+
+    -- Empates
+    SUM(
+        CASE 
+            WHEN ((p.jogador1_id = j1.id AND p.jogador2_id = j2.id) OR
+                  (p.jogador2_id = j1.id AND p.jogador1_id = j2.id) OR
+                  (p.jogador3_id = j1.id AND p.jogador4_id = j2.id) OR
+                  (p.jogador4_id = j1.id AND p.jogador3_id = j2.id))
+                 AND p.dupla_vencedora = 'AB'
+            THEN 1 ELSE 0
+        END
+    ) AS empates,
+
+    -- Mérito (vitória + C ou L na jogada)
+    SUM(
+        CASE
+            WHEN (
+                ((p.jogador1_id = j1.id AND p.jogador2_id = j2.id AND p.dupla_vencedora = 'A') OR
+                 (p.jogador2_id = j1.id AND p.jogador1_id = j2.id AND p.dupla_vencedora = 'A') OR
+                 (p.jogador3_id = j1.id AND p.jogador4_id = j2.id AND p.dupla_vencedora = 'B') OR
+                 (p.jogador4_id = j1.id AND p.jogador3_id = j2.id AND p.dupla_vencedora = 'B'))
+                AND (p.jogadas ILIKE '%C%' OR p.jogadas ILIKE '%L%')
+            )
+            THEN 1 ELSE 0
+        END
+    ) AS merito,
+
+    -- Laelo (vitória + L)
+    SUM(
+        CASE
+            WHEN (
+                ((p.jogador1_id = j1.id AND p.jogador2_id = j2.id AND p.dupla_vencedora = 'A') OR
+                 (p.jogador2_id = j1.id AND p.jogador1_id = j2.id AND p.dupla_vencedora = 'A') OR
+                 (p.jogador3_id = j1.id AND p.jogador4_id = j2.id AND p.dupla_vencedora = 'B') OR
+                 (p.jogador4_id = j1.id AND p.jogador3_id = j2.id AND p.dupla_vencedora = 'B'))
+                AND p.jogadas ILIKE '%L%'
+            )
+            THEN 1 ELSE 0
+        END
+    ) AS laelo,
+
+    -- Cruzada (vitória + C)
+    SUM(
+        CASE
+            WHEN (
+                ((p.jogador1_id = j1.id AND p.jogador2_id = j2.id AND p.dupla_vencedora = 'A') OR
+                 (p.jogador2_id = j1.id AND p.jogador1_id = j2.id AND p.dupla_vencedora = 'A') OR
+                 (p.jogador3_id = j1.id AND p.jogador4_id = j2.id AND p.dupla_vencedora = 'B') OR
+                 (p.jogador4_id = j1.id AND p.jogador3_id = j2.id AND p.dupla_vencedora = 'B'))
+                AND p.jogadas ILIKE '%C%'
+            )
+            THEN 1 ELSE 0
+        END
+    ) AS cruzada
+
+FROM vw_partida_com_vencedor p
+
+-- Unindo com jogadores da dupla
+JOIN jogador j1 ON j1.id IN (p.jogador1_id, p.jogador2_id, p.jogador3_id, p.jogador4_id)
+JOIN jogador j2 ON j2.id IN (p.jogador1_id, p.jogador2_id, p.jogador3_id, p.jogador4_id)
+    AND j1.id < j2.id  -- Evita pares duplicados e autojoins
+
+-- Garantir que são da mesma dupla
+WHERE 
+    ( (p.jogador1_id = j1.id AND p.jogador2_id = j2.id) OR
+      (p.jogador2_id = j1.id AND p.jogador1_id = j2.id) OR
+      (p.jogador3_id = j1.id AND p.jogador4_id = j2.id) OR
+      (p.jogador4_id = j1.id AND p.jogador3_id = j2.id) )
+
+GROUP BY
+    CASE
+        WHEN j1.nome < j2.nome THEN j1.id || ',' || j2.id
+        ELSE j2.id || ',' || j1.id
+    END,
+    CASE
+        WHEN j1.nome < j2.nome THEN j1.nome || ',' || j2.nome
+        ELSE j2.nome || ',' || j1.nome
+    END
+ORDER BY partidas DESC;

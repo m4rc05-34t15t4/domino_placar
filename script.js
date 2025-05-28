@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if(String(partida.data_hora).slice(0, 10) != $data_dia) {
                 $data_dia = String(partida.data_hora).slice(0, 10);
                 $("#container-partidas").append(`
-                    <div class="d-flex align-items-center my-1 w-100 my-3">
+                    <div class="d-flex align-items-center my-1 w-100">
                         <div class="flex-grow-1 border-top"></div>
                         <div class="px-3 text-nowrap text-muted small">
                             ${formatarDataISO($data_dia)}
@@ -291,19 +291,21 @@ document.addEventListener('DOMContentLoaded', function() {
             else if($v_cencedor == "B") $placar = `<div class="derrota"></div>${$placar}<div class="${$medalha}"></div>`;
             
             card.innerHTML = `
-                <div id="div_partida_${partida.id}" dados_partida="${Object.values(partida)}" class="card-partida card-body m-0">
+                <div id="div_partida_${partida.id}" dados_partida="${Object.values(partida)}" class="card-partida card-body m-0 px-3 py-2">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="col text-primary">
-                            <div class="d-flex flex-rown justify-content-start align-items-center">${$m1} ${jogadores[partida.jogador1_id] || "?"}</div>
-                            <div class="d-flex flex-rown justify-content-start align-items-center">${$m2} ${jogadores[partida.jogador2_id] || "?"}</div>
+                            <div class="jogador dupla-a d-flex flex-rown justify-content-start align-items-center">${$m1} ${jogadores[partida.jogador1_id] || "?"}</div>
+                            <hr class="mx-0 my-1 p-0">
+                            <div class="jogador dupla-a d-flex flex-rown justify-content-start align-items-center">${$m2} ${jogadores[partida.jogador2_id] || "?"}</div>
                         </div>
                         <div class="col d-flex flex-column justify-content-center align-items-center">
                             <small class="text-muted">${dataFormatada} (${partida.id})</small>
                             <div class="fw-bold fs-4 d-flex flex-rown justify-content-center align-items-center">${$placar}</div>
                         </div>
                         <div class="col text-danger text-end">
-                            <div class="d-flex flex-rown justify-content-end align-items-center">${jogadores[partida.jogador3_id] || "?"} ${$m3}</div>
-                            <div class="d-flex flex-rown justify-content-end align-items-center">${jogadores[partida.jogador4_id] || "?"} ${$m4}</div>
+                            <div class="jogador dupla-b d-flex flex-rown justify-content-end align-items-center">${jogadores[partida.jogador3_id] || "?"} ${$m3}</div>
+                            <hr class="mx-0 my-1 p-0">
+                            <div class="jogador dupla-b d-flex flex-rown justify-content-end align-items-center">${jogadores[partida.jogador4_id] || "?"} ${$m4}</div>
                         </div>
                     </div>
                 </div>
@@ -537,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Preencher id
         $("#bt_submit").attr("id_partida", d.id);
         $("#bt_submit").html("Salvar");
-        $("#ModalPartida_titulo").html(`Partida id: ${d.id} - ${d.data_hora.slice(0, 16)}`);
+        $("#ModalPartida_titulo").html(`(${d.id}) ${d.data_hora.slice(0, 16)}`);
         
         if(administrador()) {
             $("#bt-close-partida").fadeOut(0);
