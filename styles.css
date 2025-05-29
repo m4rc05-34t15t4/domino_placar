@@ -115,6 +115,7 @@ header {
 .bt-jogada {
     min-width: 100px;
     max-width: 100px;
+    border: 3px dashed gold !important;
 }
 
 .bt-rodape-modal {
@@ -133,8 +134,12 @@ header {
     min-height: 140px;
     background-image: url('img/avatar.png');
     background-repeat: no-repeat;
-    background-size: contain;
+    background-size: cover;
     background-position: center;
+}
+
+.card-totais {
+    min-width: 150px !important;
 }
 
 .fade-in {
@@ -147,4 +152,18 @@ header {
     to {
         opacity: 1;
     }
+}
+
+@media (max-width: 600px) {
+    /* Chrome, Safari, Edge, Opera */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Firefox */
+    input[type="number"] {
+        -moz-appearance: textfield;
+  }
 }

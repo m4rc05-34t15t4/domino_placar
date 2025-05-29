@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
         container.innerHTML = "";
         const linha = document.createElement("div");
         linha.classList.add("input-group", "mb-2");
-        linha.innerHTML = `<input type="text" class="form-control" value="" id="jogador-new"><button id="bt_add_jogador_linha" class="btn btn-outline-success">Adicionar Jogador</button>`;
+        linha.innerHTML = `<input type="text" class="form-control border-success" value="" id="jogador-new"><button id="bt_add_jogador_linha" class="btn btn-outline-success">Adicionar Jogador</button>`;
         container.appendChild(linha);
 
         Object.entries($JOGADORES).forEach(([id, nome]) => {
@@ -269,7 +269,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function verificar_jogadores_estatisticas_totais(jog){
         for (const [key, valores] of Object.entries($JOG_ESTATISTICAS_TOTAIS)) {
             if (jog[key] > valores[0][0] && jog[key] > 0) $JOG_ESTATISTICAS_TOTAIS[key] = [[jog[key], jog.id, jog.nome]];
-            else if(jog[key] == valores[0] && jog[key] > 0) $JOG_ESTATISTICAS_TOTAIS[key].push([jog[key], jog.id, jog.nome]);
+            else if(jog[key] == valores[0][0] && jog[key] > 0) $JOG_ESTATISTICAS_TOTAIS[key].push([jog[key], jog.id, jog.nome]);
+            if($JOG_ESTATISTICAS_TOTAIS[key]["total"] == undefined) $JOG_ESTATISTICAS_TOTAIS[key]["total"] = 0;
+            if(jog[key] > 0) $JOG_ESTATISTICAS_TOTAIS[key]["total"]++;
         }
     }
 
@@ -284,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
             verificar_jogadores_estatisticas_totais(jog);
             card.innerHTML = `
                 <div class="d-flex align-items-center">
-                    <div class="user-img me-2 rounded" style="background-image: url('img/jogadores/${jog.id}.jpg'), url('img/avatar.png');"></div>
+                    <div class="user-img me-2 rounded" style="background-image: url('img/jogadores/${jog.id}.gif'), url('img/jogadores/${jog.id}.jpg'), url('img/avatar.png');"></div>
                     <div class="flex-grow-1">
                         <div class="d-flex flex-rown justify-content-between align-items-center px-1 py-0">
                             <span class="text-primary fw-bold" style="font-size: 17px;">${jog.nome}</span> 
@@ -316,29 +318,37 @@ document.addEventListener('DOMContentLoaded', function() {
         const cardst = document.createElement("div");
         cardst.className = "cards-jogadores-estatisticas flex-grow-1 flex-wrap w-100 justify-content-center align-items-center";
         cardst.innerHTML = `
-            <div class="d-flex flex-rown align-items-center">
-                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>🎮 Partidas</strong>
+            <div class="d-flex flex-rown flex-wrap justify-content-center align-items-start w-100">
+                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                    <strong>🎮 Partidas (${$JOG_ESTATISTICAS_TOTAIS['partidas']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['partidas']['texto']}
                 </div>
-                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>🏆 Vitórias</strong>
+                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                    <strong>🏆 Vitórias (${$JOG_ESTATISTICAS_TOTAIS['vitorias']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['vitorias']['texto']}
                 </div>
-                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>💀 Derrotas</strong>
+                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                    <strong>💀 Derrotas (${$JOG_ESTATISTICAS_TOTAIS['derrotas']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['derrotas']['texto']}
                 </div>
-                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>🤝 Empates</strong>
+                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                    <strong>🤝 Empates (${$JOG_ESTATISTICAS_TOTAIS['empates']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['empates']['texto']}
                 </div>
-                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>💩 Merdas</strong>
+                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                    <strong>💩 Merdas (${$JOG_ESTATISTICAS_TOTAIS['merda']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['merda']['texto']}
                 </div>
-                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>🎯 Méritos</strong>
+                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                    <strong>🎯 Méritos (${$JOG_ESTATISTICAS_TOTAIS['merito']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['merito']['texto']}
                 </div>
-                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>🔀 Lá e Lô</strong>
+                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                    <strong>🔀 Lá e Lô (${$JOG_ESTATISTICAS_TOTAIS['laelo']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['laelo']['texto']}
                 </div>
-                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>⚔️ Cruzada</strong>
+                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                    <strong>⚔️ Cruzada (${$JOG_ESTATISTICAS_TOTAIS['pontos']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['pontos']['texto']}
                 </div>
             </div>`;

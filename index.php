@@ -13,7 +13,7 @@
     
     <body>
         <div class="main-container container-fluid min-vh-100 bg-light p-0">
-            <header class="d-flex justify-content-around align-items-center flex-wrap m-2 mt-3">
+            <div class="d-flex justify-content-around align-items-center flex-wrap m-2 mt-3">
                 <h1 class="h3 text-dark d-flex align-items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy text-warning" aria-hidden="true">
                         <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
@@ -26,7 +26,7 @@
                     Partidas de Dominó
                 </h1>
                 
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap w-fill justify-content-center align-items-center">
                     <button id="add_partida" class="btn btn-primary d-flex align-items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-plus" aria-hidden="true">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -63,7 +63,7 @@
                          Jogadores
                     </button>
                 </div>
-            </header>
+            </div>
             
             <div id="container-partidas" class="d-none div_cards-conteudo d-flex justify-content-center align-items-center flex-wrap w-fill h-fill"></div>
 
@@ -103,11 +103,11 @@
                                             <div id="div-form-dupla1">
                                                 <div>
                                                     <div class="d-flex flex-rown">
-                                                        <select id="selectJogador1" class="form-select w-fill" required></select>
+                                                        <select id="selectJogador1" class="form-select text-primary border-primary text-center" required></select>
                                                         <img id="merda_jogador_1" class="img_merda m-1 ms-3" src="img/merda.png"/>
                                                     </div>
                                                     <div class="d-flex flex-rown">
-                                                        <select id="selectJogador2" class="form-select" required></select>
+                                                        <select id="selectJogador2" class="form-select text-primary border-primary text-center" required></select>
                                                         <img id="merda_jogador_2" class="img_merda m-1 ms-3" src="img/merda.png"/>
                                                     </div>
                                                 </div>
@@ -115,9 +115,9 @@
                                         </td>
                                         <td rowspan="2" class="td-content-h">
                                             <div class="d-flex flex-column justify-content-around align-items-center h-100 mt-3">
-                                                <input type="number" class="numero_placar form-control fs-4" id="placar1" min="0" max="6" required>
+                                                <input type="number" class="numero_placar form-control fs-4 border-primary text-primary" id="placar1" min="0" max="6" required>
                                                 <div class="align-self-center fs-1 w-100" style="transform: translateY(-5px);">X</div>
-                                                <input type="number" class="numero_placar form-control fs-4" id="placar2" min="0" max="6" required>
+                                                <input type="number" class="numero_placar form-control fs-4 border-danger text-danger" id="placar2" min="0" max="6" required>
                                             </div>
                                         </td>
                                     </tr>
@@ -126,11 +126,11 @@
                                             <div id="div-form-dupla2">
                                                 <div>
                                                     <div class="d-flex flex-rown">
-                                                        <select id="selectJogador3" class="form-select" required></select>
+                                                        <select id="selectJogador3" class="form-select text-danger border-danger text-center" required></select>
                                                         <img id="merda_jogador_3" class="img_merda m-1 ms-3" src="img/merda.png"/>
                                                     </div>
                                                     <div class="d-flex flex-rown">
-                                                        <select id="selectJogador4" class="form-select" required></select>
+                                                        <select id="selectJogador4" class="form-select text-danger border-danger text-center" required></select>
                                                         <img id="merda_jogador_4" class="img_merda m-1 ms-3" src="img/merda.png"/>
                                                     </div>
                                                 </div>
