@@ -1,6 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
 
     $JOGADORES =  {};
+    $JOGADORES_ESTATISTICAS = {};
+    $JOG_ESTATISTICAS_TOTAIS = {
+        "partidas" : [[0, 0, null]],
+        "vitorias" : [[0, 0, null]],
+        "derrotas" : [[0, 0, null]],
+        "empates" : [[0, 0, null]],
+        "merda" : [[0, 0, null]],
+        "merito" : [[0, 0, null]],
+        "laelo" : [[0, 0, null]],
+        "cruzada" : [[0, 0, null]],
+        "pontos" : [[0, 0, null]]
+    };
     $PARTIDAS = [];
 
     const ModalPartida = new bootstrap.Modal(document.getElementById('ModalPartida'));
@@ -252,6 +264,85 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
         }
         return $vencedor;
+    }
+
+    function verificar_jogadores_estatisticas_totais(jog){
+        for (const [key, valores] of Object.entries($JOG_ESTATISTICAS_TOTAIS)) {
+            if (jog[key] > valores[0][0] && jog[key] > 0) $JOG_ESTATISTICAS_TOTAIS[key] = [[jog[key], jog.id, jog.nome]];
+            else if(jog[key] == valores[0] && jog[key] > 0) $JOG_ESTATISTICAS_TOTAIS[key].push([jog[key], jog.id, jog.nome]);
+        }
+    }
+
+    function popularCardsJogadores(jog_estatisticas){
+
+        const container = document.getElementById("container-jogadores");
+        container.innerHTML = "";
+        jog_estatisticas.forEach(jog => {
+            const card = document.createElement("div");
+            card.className = "cards-jogadores card shadow-sm m-2 p-2";
+            jog.pontos = (parseInt(jog.vitorias) + parseInt(jog.merito) + parseInt(jog.cruzada)) - (parseInt(jog.derrotas) + parseInt(jog.merda) + parseInt(jog.empates));
+            verificar_jogadores_estatisticas_totais(jog);
+            card.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="user-img me-2 rounded" style="background-image: url('img/jogadores/${jog.id}.jpg'), url('img/avatar.png');"></div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex flex-rown justify-content-between align-items-center px-1 py-0">
+                            <span class="text-primary fw-bold" style="font-size: 17px;">${jog.nome}</span> 
+                            <span class="text-muted">ID: <strong>${jog.id}</strong> | 📊Pts.: <strong>${jog.pontos}</strong></span>
+                        </div>
+                        <hr class="my-1">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>🎮 Partidas: </span><strong>${jog.partidas}</strong></div>
+                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>🏆 Vitórias: </span><strong>${jog.vitorias}</strong></div>
+                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>💀 Derrotas: </span><strong>${jog.derrotas}</strong></div>
+                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>🤝 Empates: </span><strong>${jog.empates}</strong></div>
+                            </div>
+                            <div class="col-6" style="border-left: 1px solid rgba(0, 0, 0, 0.3);">
+                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>💩 Merdas: </span><strong>${jog.merda}</strong></div>
+                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>🎯 Méritos: </span><strong>${jog.merito}</strong></div>
+                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>🔀 Lá e Lô: </span><strong>${jog.laelo}</strong></div>
+                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>⚔️ Cruzada: </span><strong>${jog.cruzada}</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            container.appendChild(card);
+        });
+
+        //jogadores estatisticas totais
+        for (const [key, valores] of Object.entries($JOG_ESTATISTICAS_TOTAIS)) $JOG_ESTATISTICAS_TOTAIS[key]['texto'] = valores[0][0] > 0 ? `${$JOG_ESTATISTICAS_TOTAIS[key].map(v => `<span>${v[0]} ${v[2]}`).join('</span>')}</span>` : '--' ;
+        console.log('$JOG_ESTATISTICAS_TOTAIS', $JOG_ESTATISTICAS_TOTAIS);
+        const cardst = document.createElement("div");
+        cardst.className = "cards-jogadores-estatisticas flex-grow-1 flex-wrap w-100 justify-content-center align-items-center";
+        cardst.innerHTML = `
+            <div class="d-flex flex-rown align-items-center">
+                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>🎮 Partidas</strong>
+                    ${$JOG_ESTATISTICAS_TOTAIS['partidas']['texto']}
+                </div>
+                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>🏆 Vitórias</strong>
+                    ${$JOG_ESTATISTICAS_TOTAIS['vitorias']['texto']}
+                </div>
+                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>💀 Derrotas</strong>
+                    ${$JOG_ESTATISTICAS_TOTAIS['derrotas']['texto']}
+                </div>
+                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>🤝 Empates</strong>
+                    ${$JOG_ESTATISTICAS_TOTAIS['empates']['texto']}
+                </div>
+                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>💩 Merdas</strong>
+                    ${$JOG_ESTATISTICAS_TOTAIS['merda']['texto']}
+                </div>
+                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>🎯 Méritos</strong>
+                    ${$JOG_ESTATISTICAS_TOTAIS['merito']['texto']}
+                </div>
+                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>🔀 Lá e Lô</strong>
+                    ${$JOG_ESTATISTICAS_TOTAIS['laelo']['texto']}
+                </div>
+                <div class="card shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center"><strong>⚔️ Cruzada</strong>
+                    ${$JOG_ESTATISTICAS_TOTAIS['pontos']['texto']}
+                </div>
+            </div>`;
+        container.prepend(cardst);
     }
 
     function popularCardsPartidas(partidas, jogadores) {
@@ -577,8 +668,13 @@ document.addEventListener('DOMContentLoaded', function() {
             popularSelectsJogadores(dados.data.get_jogadores);
         }
         if (dados && dados.data && dados.data.get_partidas) {
-            popularCardsPartidas(dados.data.get_partidas, $JOGADORES);
             $PARTIDAS = dados.data.get_partidas;
+            popularCardsPartidas($PARTIDAS, $JOGADORES);
+            $('#container-partidas').removeClass('d-none').addClass('d-flex fade-in');
+        }
+        if (dados && dados.data && dados.data.get_jogadores_estatistica) {
+            $JOGADORES_ESTATISTICAS = dados.data.get_jogadores_estatistica;
+            popularCardsJogadores($JOGADORES_ESTATISTICAS);
         }
     });
 
@@ -607,6 +703,16 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("formPartida").addEventListener("submit", async function(e) {
         e.preventDefault(); // Impede o envio tradicional
         cadastrar_partida();
+    });
+
+    $("#ver_estatisticas").click(function(){
+        $('#container-partidas').removeClass('d-flex').addClass('d-none fade-in');
+        $('#container-jogadores').removeClass('d-none').addClass('d-flex fade-in');
+    });
+
+    $("#ver_partidas").click(function(){
+        $('#container-jogadores').removeClass('d-flex').addClass('d-none fade-in');
+        $('#container-partidas').removeClass('d-none').addClass('d-flex fade-in');
     });
 
     $("#add_jogadores").click(function(){
