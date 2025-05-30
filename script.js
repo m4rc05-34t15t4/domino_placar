@@ -284,10 +284,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function verificar_jogadores_estatisticas_totais(jog){
         for (const [key, valores] of Object.entries($JOG_ESTATISTICAS_TOTAIS)) {
             $jog_k = parseInt(jog[key]);
-            if ($jog_k > parseInt(valores["dados"][0][0]) && $jog_k > 0) $JOG_ESTATISTICAS_TOTAIS[key]["dados"] = [[$jog_k, jog.id, jog.nome]];
-            else if($jog_k == parseInt(valores["dados"][0][0]) && $jog_k > 0) $JOG_ESTATISTICAS_TOTAIS[key]["dados"].push([$jog_k, jog.id, jog.nome]);
-            if($JOG_ESTATISTICAS_TOTAIS[key]["total"] == undefined) $JOG_ESTATISTICAS_TOTAIS[key]["total"] = 0;
-            if($jog_k > 0) $JOG_ESTATISTICAS_TOTAIS[key]["total"]++;
+            if ( $jog_k > parseInt(valores["dados"][0][0]) && $jog_k > 0 ) $JOG_ESTATISTICAS_TOTAIS[key]["dados"] = [[$jog_k, jog.id, jog.nome]];
+            else if( $jog_k == parseInt(valores["dados"][0][0]) && $jog_k > 0 ) $JOG_ESTATISTICAS_TOTAIS[key]["dados"].push([$jog_k, jog.id, jog.nome]);
+            if( $jog_k > 0 && !["pontos", "placar_vitoria", "placar_derrota"].includes(key) ) $JOG_ESTATISTICAS_TOTAIS[key]["total"]++;
+            else if( ["pontos", "placar_vitoria", "placar_derrota"].includes(key) ) $JOG_ESTATISTICAS_TOTAIS[key]["total"] += $jog_k;
         }
     }
 
