@@ -319,36 +319,40 @@ document.addEventListener('DOMContentLoaded', function() {
         cardst.className = "cards-jogadores-estatisticas flex-grow-1 flex-wrap w-100 justify-content-center align-items-center";
         cardst.innerHTML = `
             <div class="d-flex flex-rown flex-wrap justify-content-center align-items-start w-100">
-                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-center align-items-center">
                     <strong>🎮 Partidas (${$JOG_ESTATISTICAS_TOTAIS['partidas']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['partidas']['texto']}
                 </div>
-                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-center align-items-center">
                     <strong>🏆 Vitórias (${$JOG_ESTATISTICAS_TOTAIS['vitorias']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['vitorias']['texto']}
                 </div>
-                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-center align-items-center">
                     <strong>💀 Derrotas (${$JOG_ESTATISTICAS_TOTAIS['derrotas']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['derrotas']['texto']}
                 </div>
-                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-center align-items-center">
                     <strong>🤝 Empates (${$JOG_ESTATISTICAS_TOTAIS['empates']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['empates']['texto']}
                 </div>
-                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-center align-items-center">
                     <strong>💩 Merdas (${$JOG_ESTATISTICAS_TOTAIS['merda']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['merda']['texto']}
                 </div>
-                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-center align-items-center">
                     <strong>🎯 Méritos (${$JOG_ESTATISTICAS_TOTAIS['merito']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['merito']['texto']}
                 </div>
-                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
+                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-center align-items-center">
                     <strong>🔀 Lá e Lô (${$JOG_ESTATISTICAS_TOTAIS['laelo']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['laelo']['texto']}
                 </div>
-                <div class="card card-totais shadow-sm m-2 p-2 d-flex flex-column justify-content-center align-items-center">
-                    <strong>⚔️ Cruzada (${$JOG_ESTATISTICAS_TOTAIS['pontos']['total']})</strong>
+                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-center align-items-center">
+                    <strong>⚔️ Cruzada (${$JOG_ESTATISTICAS_TOTAIS['cruzada']['total']})</strong>
+                    ${$JOG_ESTATISTICAS_TOTAIS['cruzada']['texto']}
+                </div>
+                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-center align-items-center">
+                    <strong>📊 Pontos (${$JOG_ESTATISTICAS_TOTAIS['pontos']['total']})</strong>
                     ${$JOG_ESTATISTICAS_TOTAIS['pontos']['texto']}
                 </div>
             </div>`;

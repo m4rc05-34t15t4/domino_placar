@@ -139,7 +139,7 @@ header {
 }
 
 .card-totais {
-    min-width: 150px !important;
+    font-size: 14px !important;
 }
 
 .fade-in {
