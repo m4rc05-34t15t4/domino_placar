@@ -1,0 +1,1 @@
+ffmpeg -i gif_wellison.gif -vf "fps=10,scale=iw:-1:flags=lanczos" -gifflags -transdiff -y gif_wellison_otimizado.gif

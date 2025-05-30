@@ -31,7 +31,6 @@ body {
 .cards-jogadores {
     min-width: 400px !important;
     max-width: 400px !important;
-    max-height: 160px !important;
     cursor: pointer;
     background: linear-gradient(0deg, #eee, #ffffff); /* gelo estilizado */
 }
