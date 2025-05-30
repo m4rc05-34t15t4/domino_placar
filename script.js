@@ -3,17 +3,17 @@ document.addEventListener('DOMContentLoaded', function() {
     $JOGADORES =  {};
     $JOGADORES_ESTATISTICAS = {};
     $JOG_ESTATISTICAS_TOTAIS = {
-        "partidas" : [[0, 0, null]],
-        "vitorias" : [[0, 0, null]],
-        "derrotas" : [[0, 0, null]],
-        "placar_vitoria" : [[0, 0, null]],
-        "placar_derrota" : [[0, 0, null]],
-        "empates" : [[0, 0, null]],
-        "merda" : [[0, 0, null]],
-        "merito" : [[0, 0, null]],
-        "laelo" : [[0, 0, null]],
-        "cruzada" : [[0, 0, null]],
-        "pontos" : [[0, 0, null]]
+        "partidas" : { "titulo" : "🎮 Partidas", "dados" : [[0, 0, null]], "total" : 0 },
+        "vitorias" : { "titulo" : "🏆 Vitórias", "dados" : [[0, 0, null]], "total" : 0 },
+        "derrotas" : { "titulo" : "💀 Derrotas", "dados" : [[0, 0, null]], "total" : 0 },
+        "placar_vitoria" : { "titulo" : "⚽ Placar Vitória", "dados" : [[0, 0, null]], "total" : 0 },
+        "placar_derrota" : { "titulo" : "😞 Placar Derrota", "dados" : [[0, 0, null]], "total" : 0 },
+        "empates" : { "titulo" : "🤝 Empates", "dados" : [[0, 0, null]], "total" : 0 },
+        "merda" : { "titulo" : "💩 Merdas", "dados" : [[0, 0, null]], "total" : 0 },
+        "merito" : { "titulo" : "🎯 Méritos", "dados" : [[0, 0, null]], "total" : 0 },
+        "laelo" : { "titulo" : "🔀 Lá e Lô", "dados" : [[0, 0, null]], "total" : 0 },
+        "cruzada" : { "titulo" : "⚔️ Cruzada", "dados" : [[0, 0, null]], "total" : 0 },
+        "pontos" : { "titulo" : "📊 Pontos", "dados" : [[0, 0, null]], "total" : 0 }
     };
     $PARTIDAS = [];
 
@@ -270,57 +270,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function popula_jog_estatisticas_totais(container){
         //jogadores estatisticas totais
-        for (const [key, valores] of Object.entries($JOG_ESTATISTICAS_TOTAIS)) $JOG_ESTATISTICAS_TOTAIS[key]['texto'] = valores[0][0] > 0 ? `${$JOG_ESTATISTICAS_TOTAIS[key].map(v => `<span>${v[0]} ${v[2]}`).join('</span>')}</span>` : '--' ;
+        for (const [key, valores] of Object.entries($JOG_ESTATISTICAS_TOTAIS)) $JOG_ESTATISTICAS_TOTAIS[key]['texto'] = valores["dados"][0][0] > 0 ? `${$JOG_ESTATISTICAS_TOTAIS[key]["dados"].map(v => `<span>${v[0]} ${v[2]}`).join('</span>')}</span>` : '--' ;
         console.log('$JOG_ESTATISTICAS_TOTAIS', $JOG_ESTATISTICAS_TOTAIS);
         const cardst = document.createElement("div");
         cardst.className = "cards-jogadores-estatisticas flex-grow-1 flex-wrap w-100 justify-content-center align-items-center";
-        cardst.innerHTML = `
-            <div class="d-flex flex-rown flex-wrap justify-content-center align-items-stretch w-100">
-                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center ">
-                    <strong>🎮 Partidas (${$JOG_ESTATISTICAS_TOTAIS['partidas']['total']})</strong>
-                    ${$JOG_ESTATISTICAS_TOTAIS['partidas']['texto']}
-                </div>
-                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center">
-                    <strong>🏆 Vitórias (${$JOG_ESTATISTICAS_TOTAIS['vitorias']['total']})</strong>
-                    ${$JOG_ESTATISTICAS_TOTAIS['vitorias']['texto']}
-                </div>
-                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center">
-                    <strong>💀 Derrotas (${$JOG_ESTATISTICAS_TOTAIS['derrotas']['total']})</strong>
-                    ${$JOG_ESTATISTICAS_TOTAIS['derrotas']['texto']}
-                </div>
-                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center">
-                    <strong>⚽ Placar Vitória (${$JOG_ESTATISTICAS_TOTAIS['placar_vitoria']['total']})</strong>
-                    ${$JOG_ESTATISTICAS_TOTAIS['placar_vitoria']['texto']}
-                </div>
-                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center">
-                    <strong>😞 Placar Derrota (${$JOG_ESTATISTICAS_TOTAIS['placar_derrota']['total']})</strong>
-                    ${$JOG_ESTATISTICAS_TOTAIS['placar_derrota']['texto']}
-                </div>
-                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center">
-                    <strong>🤝 Empates (${$JOG_ESTATISTICAS_TOTAIS['empates']['total']})</strong>
-                    ${$JOG_ESTATISTICAS_TOTAIS['empates']['texto']}
-                </div>
-                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center">
-                    <strong>💩 Merdas (${$JOG_ESTATISTICAS_TOTAIS['merda']['total']})</strong>
-                    ${$JOG_ESTATISTICAS_TOTAIS['merda']['texto']}
-                </div>
-                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center">
-                    <strong>🎯 Méritos (${$JOG_ESTATISTICAS_TOTAIS['merito']['total']})</strong>
-                    ${$JOG_ESTATISTICAS_TOTAIS['merito']['texto']}
-                </div>
-                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center">
-                    <strong>🔀 Lá e Lô (${$JOG_ESTATISTICAS_TOTAIS['laelo']['total']})</strong>
-                    ${$JOG_ESTATISTICAS_TOTAIS['laelo']['texto']}
-                </div>
-                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center">
-                    <strong>⚔️ Cruzada (${$JOG_ESTATISTICAS_TOTAIS['cruzada']['total']})</strong>
-                    ${$JOG_ESTATISTICAS_TOTAIS['cruzada']['texto']}
-                </div>
-                <div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center">
-                    <strong>📊 Pontos (${$JOG_ESTATISTICAS_TOTAIS['pontos']['total']})</strong>
-                    ${$JOG_ESTATISTICAS_TOTAIS['pontos']['texto']}
-                </div>
-            </div>`;
+        $divs_titulos_estatisticas = "";
+        for (const [key, valores] of Object.entries($JOG_ESTATISTICAS_TOTAIS)) $divs_titulos_estatisticas += $JOG_ESTATISTICAS_TOTAIS[key]['texto'] != '--' ? `<div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center "><strong>${$JOG_ESTATISTICAS_TOTAIS[key]['titulo']} (${$JOG_ESTATISTICAS_TOTAIS[key]['total']})</strong>${$JOG_ESTATISTICAS_TOTAIS[key]['texto']}</div>` : '';
+        cardst.innerHTML = `<div class="d-flex flex-rown flex-wrap justify-content-center align-items-stretch w-100">${$divs_titulos_estatisticas}</div>`;
         container.prepend(cardst);
 
     }
@@ -328,11 +284,28 @@ document.addEventListener('DOMContentLoaded', function() {
     function verificar_jogadores_estatisticas_totais(jog){
         for (const [key, valores] of Object.entries($JOG_ESTATISTICAS_TOTAIS)) {
             $jog_k = parseInt(jog[key]);
-            if ($jog_k > parseInt(valores[0][0]) && $jog_k > 0) $JOG_ESTATISTICAS_TOTAIS[key] = [[$jog_k, jog.id, jog.nome]];
-            else if($jog_k == parseInt(valores[0][0]) && $jog_k > 0) $JOG_ESTATISTICAS_TOTAIS[key].push([$jog_k, jog.id, jog.nome]);
+            if ($jog_k > parseInt(valores["dados"][0][0]) && $jog_k > 0) $JOG_ESTATISTICAS_TOTAIS[key]["dados"] = [[$jog_k, jog.id, jog.nome]];
+            else if($jog_k == parseInt(valores["dados"][0][0]) && $jog_k > 0) $JOG_ESTATISTICAS_TOTAIS[key]["dados"].push([$jog_k, jog.id, jog.nome]);
             if($JOG_ESTATISTICAS_TOTAIS[key]["total"] == undefined) $JOG_ESTATISTICAS_TOTAIS[key]["total"] = 0;
             if($jog_k > 0) $JOG_ESTATISTICAS_TOTAIS[key]["total"]++;
         }
+    }
+
+    function calcular_pontos(jog){
+        return ( 
+            (
+                ( parseInt(jog.vitorias) * 3 ) + 
+                ( parseInt(jog.placar_vitoria) ) + 
+                ( parseInt(jog.placar_derrota) ) + 
+                ( parseInt(jog.merito) ) + 
+                ( parseInt(jog.cruzada) * 4 ) + 
+                ( parseInt(jog.laelo) * 3 )
+            ) - ( 
+                ( parseInt(jog.derrotas) * 3 ) + 
+                ( parseInt(jog.merda) * 3 ) + 
+                ( parseInt(jog.empates) )
+            )
+        );
     }
 
     function popularCardsJogadores(jog_estatisticas){
@@ -342,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
         jog_estatisticas.forEach(jog => {
             const card = document.createElement("div");
             card.className = "cards-jogadores card shadow-sm m-2 p-2";
-            jog.pontos = (parseInt(jog.vitorias) + parseInt(jog.merito) + parseInt(jog.cruzada)) - (parseInt(jog.derrotas) + parseInt(jog.merda) + parseInt(jog.empates));
+            jog.pontos = calcular_pontos(jog);
             verificar_jogadores_estatisticas_totais(jog);
             card.innerHTML = `
                 <div class="d-flex align-items-center">
