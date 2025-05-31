@@ -362,23 +362,26 @@ document.addEventListener('DOMContentLoaded', function() {
                             </tr>
                         </thead>
                         <tbody>`;
-            Object.entries(v_a).forEach(([id_b, v_b]) => {
-                if(id_b!= "nome"){
-                    v_b.pontos = calcular_pontos({...v_b});
-                    $DUPLAS_ESTATISTICAS[id_a][id_b].pontos = v_b.pontos;
-                    $html += `
-                        <tr>
-                            <td id="jogador-dupla_${id_b}" jog="${id_a}" dados="${Object.values(v_b).join(',')}" class="linha_estatistica_dupla text-start">${v_b.nome}</td>
-                            <td>${v_b.pontos}</td>
-                            <td>${v_b.partidas}</td>
-                            <td>${v_b.vitorias}</td>
-                            <td>${v_b.derrotas}</td>
-                            <td>${v_b.laelo}</td>
-                            <td>${v_b.cruzada}</td>
-                        </tr>`;
-                }
+            
+            //Prepara e ordena por pontos decrescente
+            var { nome, ...jog_v_a } = v_a;
+            Object.entries(jog_v_a).forEach(([id_b, v_b]) => { $DUPLAS_ESTATISTICAS[id_a][id_b].pontos = calcular_pontos({...v_b}); });
+            var { nome, ...jogadores } = $DUPLAS_ESTATISTICAS[id_a]; // Separar campo 'nome'
+            const jogadoresOrdenados = Object.entries(jogadores).sort(([, a], [, b]) => parseInt(b.pontos ?? 0) - parseInt(a.pontos ?? 0)); // Ordenar por derrotas (decrescente)
+            const resultadoOrdenado = Object.assign( {}, ...jogadoresOrdenados.map(([id, v]) => ({ ['j' + id]: v }))); // Recriar objeto com prefixo na chave (ex: j2, j4)
+            
+            Object.entries(resultadoOrdenado).forEach(([id_b, v_b]) => {
+                $html += `
+                    <tr>
+                        <td id="jogador-dupla_${id_b}" jog="${id_a}" dados="${Object.values(v_b).join(',')}" class="linha_estatistica_dupla text-start">${v_b.nome}</td>
+                        <td>${v_b.pontos}</td>
+                        <td>${v_b.partidas}</td>
+                        <td>${v_b.vitorias}</td>
+                        <td>${v_b.derrotas}</td>
+                        <td>${v_b.laelo}</td>
+                        <td>${v_b.cruzada}</td>
+                    </tr>`;
             });
-
             $html += `</tbody></table></div>`;
             card.innerHTML = $html;
             container.appendChild(card);
@@ -387,21 +390,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function popularCardsJogadores(jog_estatisticas){
-
+        
+        //Prepara e ordena por pontos decrescente
+        Object.entries(jog_estatisticas).forEach(([id_j, v_j]) => { jog_estatisticas[id_j].pontos = calcular_pontos({...v_j}); });
+        const jogadoresOrdenados = Object.entries(jog_estatisticas).sort(([, a], [, b]) => parseInt(b.pontos ?? 0) - parseInt(a.pontos ?? 0)); // Ordenar por pontos (decrescente)
+        const resultadoOrdenado = Object.assign( {}, ...jogadoresOrdenados.map(([id, v]) => ({ ['j' + String(id)]: v }))); // Recriar objeto com prefixo na chave (ex: j2, j4)
         const container = document.getElementById("container-jogadores");
         container.innerHTML = "";
-        jog_estatisticas.forEach(jog => {
+
+        Object.entries(resultadoOrdenado).forEach(([id_j, jog]) => {
             const card = document.createElement("div");
             card.className = "cards-jogadores card shadow-sm m-2 p-2";
-            jog.pontos = calcular_pontos(jog);
+            //jog.pontos = calcular_pontos(jog);
             verificar_jogadores_estatisticas_totais(jog);
+            $id = jog.id.replace(/^j/, '');
             card.innerHTML = `
                 <div class="d-flex align-items-center">
-                    <div class="user-img me-2 rounded" style="background-image: url('img/jogadores/${jog.id}.gif'), url('img/jogadores/${jog.id}.jpg'), url('img/avatar.png');"></div>
+                    <div class="user-img me-2 rounded" style="background-image: url('img/jogadores/${$id}.gif'), url('img/jogadores/${$id}.jpg'), url('img/avatar.png');"></div>
                     <div class="flex-grow-1">
                         <div class="d-flex flex-rown justify-content-between align-items-center px-1 py-0">
                             <span class="text-primary fw-bold" style="font-size: 17px;">${jog.nome}</span> 
-                            <span class="text-muted">ID: <strong>${jog.id}</strong> | 📊Pts.: <strong>${jog.pontos}</strong></span>
+                            <span class="text-muted">ID: <strong>${$id}</strong> | 📊Pts.: <strong>${jog.pontos}</strong></span>
                         </div>
                         <hr class="my-1">
                         <div class="row">
