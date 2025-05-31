@@ -53,6 +53,21 @@
                         Estatísticas
                     </button>
 
+                    <button id="ver_estatisticas_duplas" class="btn btn-dark d-flex align-items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users" aria-hidden="true">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <path d="M16 3.128a4 4 0 0 1 0 7.744"></path>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-2" viewBox="0 0 24 24" aria-hidden="true">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                        Est. Duplas
+                    </button>
+
                     <button id="add_jogadores" class="btn btn-success d-flex align-items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users" aria-hidden="true">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
@@ -68,7 +83,10 @@
             <div id="container-partidas" class="d-none div_cards-conteudo d-flex justify-content-center align-items-center flex-wrap w-fill h-fill"></div>
 
             <div id="container-jogadores" class="d-none div_cards-conteudo d-flex justify-content-center align-items-center flex-wrap w-fill h-fill"></div>
-    
+            
+            <div id="container-duplasjogadores" class="d-none div_cards-conteudo d-flex justify-content-center align-items-center flex-wrap w-fill h-fill"></div>
+        
+        </div>
 
         <!-- Modal -->
         <div class="modal fade" id="ModalPartida" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">

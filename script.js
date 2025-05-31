@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
         "cruzada" : { "titulo" : "⚔️ Cruzada", "dados" : [[0, 0, null]], "total" : 0 },
         "pontos" : { "titulo" : "📊 Pontos", "dados" : [[0, 0, null]], "total" : 0 }
     };
+    $DUPLAS_ESTATISTICAS = {};
     $PARTIDAS = [];
 
     const ModalPartida = new bootstrap.Modal(document.getElementById('ModalPartida'));
@@ -306,6 +307,72 @@ document.addEventListener('DOMContentLoaded', function() {
                 ( parseInt(jog.empates) )
             )
         );
+    }
+
+    function popularCardsDuplasJogadores(){
+
+        const container = document.getElementById("container-duplasjogadores");
+        container.innerHTML = "";
+        Object.entries($DUPLAS_ESTATISTICAS).forEach(([id_a, v_a]) => {
+            const card = document.createElement("div");
+            card.className = "cards-jogadores card shadow-sm m-2 p-2";
+            //jog.pontos = calcular_pontos(jog);
+            //verificar_jogadores_estatisticas_totais(jog);
+            card.innerHTML = `
+                <div class="d-flex flex-rown justify-content-between align-items-center px-1 py-0">
+                    <span class="text-primary fw-bold" style="font-size: 17px;">${v_a.nome}</span> 
+                    <span class="text-muted">ID: <strong>${id_a}</strong></span>
+                </div>
+                <div class="card" style="max-width: 400px;">
+                    <table class="table tabela-compacta text-center align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                            <th class="nome-coluna">Nome</th>
+                            <th>🎮</th>
+                            <th>🏆</th>
+                            <th>💀</th>
+                            <th>📊</th>
+                            <th>🔀</th>
+                            <th>⚔️</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                            <td class="text-start">Jogador 1</td>
+                            <td>333</td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>10</td>
+                            <td>1</td>
+                            <td>0</td>
+                            </tr>
+                            <tr>
+                            <td class="text-start">Jogador 2</td>
+                            <td>4</td>
+                            <td>3</td>
+                            <td>155</td>
+                            <td>8</td>
+                            <td>2</td>
+                            <td>0</td>
+                            </tr>
+                            <tr>
+                            <td class="text-start">Jogador 3</td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>588</td>
+                            <td>3</td>
+                            <td>0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    </div>`;
+            /*Object.entries(v_a).forEach(([id_b, v_b]) => {
+                
+            });*/
+            container.appendChild(card);
+        });
+        //popula_jog_estatisticas_totais(container);
     }
 
     function popularCardsJogadores(jog_estatisticas){
@@ -658,7 +725,21 @@ document.addEventListener('DOMContentLoaded', function() {
           selecionados.push(input.getAttribute('jogada'));
         });
         return selecionados;
-      }
+    }
+
+    function prepara_dupla_estatisticas(dupla_estatistica){
+        dupla_estatistica.forEach(dupla => {
+            const [id_a, id_b] = String(dupla.id).split(",");
+            const [nome_a, nome_b] = String(dupla.nome).split(",");
+            [[id_a, nome_a, id_b, nome_b], [id_b, nome_b, id_a, nome_a]].forEach(d => {
+                if( $DUPLAS_ESTATISTICAS[d[0]] == undefined ) $DUPLAS_ESTATISTICAS[d[0]] = {"nome" : d[1]};
+                $DUPLAS_ESTATISTICAS[d[0]][d[2]] = { ...dupla }
+                $DUPLAS_ESTATISTICAS[d[0]][d[2]]["id"] = d[2];
+                $DUPLAS_ESTATISTICAS[d[0]][d[2]]["nome"] = d[3];
+            });
+        });
+        console.log('DUPLAS_ESTATISTICAS', $DUPLAS_ESTATISTICAS);
+    }
 
     //EXECUÇÃO
 
@@ -681,7 +762,16 @@ document.addEventListener('DOMContentLoaded', function() {
             $JOGADORES_ESTATISTICAS = dados.data.get_jogadores_estatistica;
             popularCardsJogadores($JOGADORES_ESTATISTICAS);
         }
+        if (dados && dados.data && dados.data.get_duplas_estatistica) {
+            prepara_dupla_estatisticas(dados.data.get_duplas_estatistica);
+            popularCardsDuplasJogadores();
+        }
     });
+
+    function sumir_conteudo_div(div_aparecer){
+        $('#container-partidas, #container-jogadores, #container-duplasjogadores').removeClass('d-flex').addClass('d-none fade-in');
+        $(div_aparecer).removeClass('d-none').addClass('d-flex fade-in');
+    }
 
     
     //EVENTOS
@@ -711,13 +801,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     $("#ver_estatisticas").click(function(){
-        $('#container-partidas').removeClass('d-flex').addClass('d-none fade-in');
-        $('#container-jogadores').removeClass('d-none').addClass('d-flex fade-in');
+        sumir_conteudo_div('#container-jogadores');
+    });
+
+    $("#ver_estatisticas_duplas").click(function(){
+        sumir_conteudo_div('#container-duplasjogadores');
     });
 
     $("#ver_partidas").click(function(){
-        $('#container-jogadores').removeClass('d-flex').addClass('d-none fade-in');
-        $('#container-partidas').removeClass('d-none').addClass('d-flex fade-in');
+        sumir_conteudo_div('#container-partidas');
     });
 
     $("#add_jogadores").click(function(){

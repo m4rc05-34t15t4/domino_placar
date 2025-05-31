@@ -141,6 +141,23 @@ header {
     font-size: 14px !important;
 }
 
+.tabela_dupla_estatisticas{
+    max-width: 380px;
+}
+
+.tabela-compacta {
+      font-size: 0.9rem;
+      table-layout: auto;
+}
+.tabela-compacta th, .tabela-compacta td {
+    padding: 0rem;
+}
+.nome-coluna {
+    min-width: 100px;
+    max-width: 150px;
+    text-align: left;
+}
+
 .fade-in {
     animation: fadeIn 0.5s ease-in-out forwards;
 }

@@ -10,6 +10,16 @@
     }
 
     //Lista Statistica Jogadores
+    function get_duplas_estatistica($order="partidas DESC"){
+        global $resultado;
+        $sql = "SELECT *
+                FROM vw_dupla_estatistica 
+                ORDER BY $order";
+        $r = executeQuery($sql);
+        if ( $r["success"] && count($r["data"]) > 0 ) $resultado['get_duplas_estatistica'] = $r["data"];
+    }
+
+    //Lista Statistica Jogadores
     function get_jogadores_estatistica($id_jogador="NULL OR NULL IS NULL", $order="partidas desc"){
         global $resultado;
         $sql = "SELECT *
@@ -47,7 +57,7 @@
         $opcao = isset($_POST['opcao']) ? $_POST['opcao'] : '';*/
     if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $opcao = isset($_GET['opcao']) ? $_GET['opcao'] : '';
-        if($opcao == "ALL") $opcao = ['get_jogadores', 'get_partidas', 'get_jogadores_estatistica'];
+        if($opcao == "ALL") $opcao = ['get_jogadores', 'get_partidas', 'get_jogadores_estatistica', 'get_duplas_estatistica'];
         if (!is_array($opcao) && strpos($opcao, ',') !== false) $opcao = explode(',', $opcao);
         elseif (!is_array($opcao)) $opcao = [$opcao];
         
@@ -62,6 +72,9 @@
                     break;
                 case 'get_jogadores_estatistica':
                     get_jogadores_estatistica();
+                    break;
+                case 'get_duplas_estatistica':
+                    get_duplas_estatistica();
                     break;
             }
         }
