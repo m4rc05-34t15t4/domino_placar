@@ -158,6 +158,11 @@ header {
     text-align: left;
 }
 
+.linha_estatistica_dupla:hover {
+    color: #06F;
+    text-decoration: underline;
+}
+
 .fade-in {
     animation: fadeIn 0.5s ease-in-out forwards;
 }

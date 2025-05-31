@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
         "pontos" : { "titulo" : "📊 Pontos", "dados" : [[0, 0, null]], "total" : 0 }
     };
     $DUPLAS_ESTATISTICAS = {};
+    $DUPLAS_ESTATISTICAS_TOTAIS = {};
     $PARTIDAS = [];
 
     const ModalPartida = new bootstrap.Modal(document.getElementById('ModalPartida'));
@@ -279,7 +280,18 @@ document.addEventListener('DOMContentLoaded', function() {
         for (const [key, valores] of Object.entries($JOG_ESTATISTICAS_TOTAIS)) $divs_titulos_estatisticas += $JOG_ESTATISTICAS_TOTAIS[key]['texto'] != '--' ? `<div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center "><strong>${$JOG_ESTATISTICAS_TOTAIS[key]['titulo']} (${$JOG_ESTATISTICAS_TOTAIS[key]['total']})</strong>${$JOG_ESTATISTICAS_TOTAIS[key]['texto']}</div>` : '';
         cardst.innerHTML = `<div class="d-flex flex-rown flex-wrap justify-content-center align-items-stretch w-100">${$divs_titulos_estatisticas}</div>`;
         container.prepend(cardst);
+    }
 
+    function popula_duplas_estatisticas_totais(container){
+        //duplas estatisticas totais
+        for (const [key, valores] of Object.entries($DUPLAS_ESTATISTICAS_TOTAIS)) $DUPLAS_ESTATISTICAS_TOTAIS[key]['texto'] = valores["dados"][0][0] > 0 ? `${$DUPLAS_ESTATISTICAS_TOTAIS[key]["dados"].map(v => `<span>${v[0]} ${v[2]}`).join('</span>')}</span>` : '--' ;
+        console.log('DUPLAS_ESTATISTICAS_TOTAIS', $DUPLAS_ESTATISTICAS_TOTAIS);
+        const cardst_d = document.createElement("div");
+        cardst_d.className = "cards-jogadores-estatisticas flex-grow-1 flex-wrap w-100 justify-content-center align-items-center";
+        $divs_titulos_estatisticas = "";
+        for (const [key, valores] of Object.entries($DUPLAS_ESTATISTICAS_TOTAIS)) $divs_titulos_estatisticas += $DUPLAS_ESTATISTICAS_TOTAIS[key]['texto'] != '--' ? `<div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center "><strong>${$JOG_ESTATISTICAS_TOTAIS[key]['titulo']} (${$DUPLAS_ESTATISTICAS_TOTAIS[key]['total']})</strong>${$DUPLAS_ESTATISTICAS_TOTAIS[key]['texto']}</div>` : '';
+        cardst_d.innerHTML = `<div class="d-flex flex-rown flex-wrap justify-content-center align-items-stretch w-100">${$divs_titulos_estatisticas}</div>`;
+        container.prepend(cardst_d);
     }
 
     function verificar_jogadores_estatisticas_totais(jog){
@@ -290,6 +302,21 @@ document.addEventListener('DOMContentLoaded', function() {
             if( $jog_k > 0 && !["pontos", "placar_vitoria", "placar_derrota"].includes(key) ) $JOG_ESTATISTICAS_TOTAIS[key]["total"]++;
             else if( ["pontos", "placar_vitoria", "placar_derrota"].includes(key) ) $JOG_ESTATISTICAS_TOTAIS[key]["total"] += $jog_k;
         }
+    }
+
+    function verificar_duplas_estatisticas_totais(gde){
+        gde.forEach(dupla => {
+            for (const [key, valores] of Object.entries(dupla)) {
+                if(valores.indexOf(",") < 0){
+                    if($DUPLAS_ESTATISTICAS_TOTAIS[key] == undefined) $DUPLAS_ESTATISTICAS_TOTAIS[key] = { "dados" : [[-1, 0, null]], "total" : 0 };
+                    $dup_k = $DUPLAS_ESTATISTICAS_TOTAIS[key]["dados"][0][0];
+                    if ( parseInt(valores) > $dup_k) $DUPLAS_ESTATISTICAS_TOTAIS[key]["dados"] = [[parseInt(valores), dupla.id, dupla.nome]];
+                    else if( parseInt(valores) == $dup_k ) $DUPLAS_ESTATISTICAS_TOTAIS[key]["dados"].push([parseInt(valores), dupla.id, dupla.nome]);
+                    if( parseInt(valores) > 0 && !["pontos", "placar_vitoria", "placar_derrota"].includes(key) ) $DUPLAS_ESTATISTICAS_TOTAIS[key]["total"]++;
+                    else if( ["pontos", "placar_vitoria", "placar_derrota"].includes(key) ) $DUPLAS_ESTATISTICAS_TOTAIS[key]["total"] += parseInt(valores);
+                }
+            }
+        });
     }
 
     function calcular_pontos(jog){
@@ -303,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ( parseInt(jog.laelo) * 3 )
             ) - ( 
                 ( parseInt(jog.derrotas) * 3 ) + 
-                ( parseInt(jog.merda) * 3 ) + 
+                ( parseInt(jog.merda ?? 0) * 3 ) + 
                 ( parseInt(jog.empates) )
             )
         );
@@ -316,63 +343,47 @@ document.addEventListener('DOMContentLoaded', function() {
         Object.entries($DUPLAS_ESTATISTICAS).forEach(([id_a, v_a]) => {
             const card = document.createElement("div");
             card.className = "cards-jogadores card shadow-sm m-2 p-2";
-            //jog.pontos = calcular_pontos(jog);
-            //verificar_jogadores_estatisticas_totais(jog);
-            card.innerHTML = `
+            $html = `
                 <div class="d-flex flex-rown justify-content-between align-items-center px-1 py-0">
                     <span class="text-primary fw-bold" style="font-size: 17px;">${v_a.nome}</span> 
                     <span class="text-muted">ID: <strong>${id_a}</strong></span>
                 </div>
                 <div class="card" style="max-width: 400px;">
                     <table class="table tabela-compacta text-center align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                            <th class="nome-coluna">Nome</th>
-                            <th>🎮</th>
-                            <th>🏆</th>
-                            <th>💀</th>
-                            <th>📊</th>
-                            <th>🔀</th>
-                            <th>⚔️</th>
+                        <thead class="table-primary">
+                            <tr style="font-size: 1rem;">
+                            <th class="nome-coluna py-0 pt-1">Nome</th>
+                            <th class="py-0">📊</th>
+                            <th class="py-0">🎮</th>
+                            <th class="py-0">🏆</th>
+                            <th class="py-0">💀</th>
+                            <th class="py-0">🔀</th>
+                            <th class="py-0">⚔️</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                            <td class="text-start">Jogador 1</td>
-                            <td>333</td>
-                            <td>2</td>
-                            <td>1</td>
-                            <td>10</td>
-                            <td>1</td>
-                            <td>0</td>
-                            </tr>
-                            <tr>
-                            <td class="text-start">Jogador 2</td>
-                            <td>4</td>
-                            <td>3</td>
-                            <td>155</td>
-                            <td>8</td>
-                            <td>2</td>
-                            <td>0</td>
-                            </tr>
-                            <tr>
-                            <td class="text-start">Jogador 3</td>
-                            <td>2</td>
-                            <td>1</td>
-                            <td>1</td>
-                            <td>588</td>
-                            <td>3</td>
-                            <td>0</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    </div>`;
-            /*Object.entries(v_a).forEach(([id_b, v_b]) => {
-                
-            });*/
+                        <tbody>`;
+            Object.entries(v_a).forEach(([id_b, v_b]) => {
+                if(id_b!= "nome"){
+                    v_b.pontos = calcular_pontos({...v_b});
+                    $DUPLAS_ESTATISTICAS[id_a][id_b].pontos = v_b.pontos;
+                    $html += `
+                        <tr>
+                            <td id="jogador-dupla_${id_b}" jog="${id_a}" dados="${Object.values(v_b).join(',')}" class="linha_estatistica_dupla text-start">${v_b.nome}</td>
+                            <td>${v_b.pontos}</td>
+                            <td>${v_b.partidas}</td>
+                            <td>${v_b.vitorias}</td>
+                            <td>${v_b.derrotas}</td>
+                            <td>${v_b.laelo}</td>
+                            <td>${v_b.cruzada}</td>
+                        </tr>`;
+                }
+            });
+
+            $html += `</tbody></table></div>`;
+            card.innerHTML = $html;
             container.appendChild(card);
         });
-        //popula_jog_estatisticas_totais(container);
+        popula_duplas_estatisticas_totais(container);
     }
 
     function popularCardsJogadores(jog_estatisticas){
@@ -763,6 +774,7 @@ document.addEventListener('DOMContentLoaded', function() {
             popularCardsJogadores($JOGADORES_ESTATISTICAS);
         }
         if (dados && dados.data && dados.data.get_duplas_estatistica) {
+            verificar_duplas_estatisticas_totais(dados.data.get_duplas_estatistica);
             prepara_dupla_estatisticas(dados.data.get_duplas_estatistica);
             popularCardsDuplasJogadores();
         }
