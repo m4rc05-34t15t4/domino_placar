@@ -9,7 +9,7 @@
         return $filtro;
     }
 
-    //Lista Statistica Jogadores
+    //Lista Statistica Duplas Jogadores
     function get_duplas_estatistica($order="partidas DESC"){
         global $resultado;
         $sql = "SELECT *
@@ -17,6 +17,16 @@
                 ORDER BY $order";
         $r = executeQuery($sql);
         if ( $r["success"] && count($r["data"]) > 0 ) $resultado['get_duplas_estatistica'] = $r["data"];
+    }
+
+    //Lista Statistica Duplas Jogadores
+    function get_rivais_estatistica_sinuca($order="partidas DESC"){
+        global $resultado;
+        $sql = "SELECT *
+                FROM vw_comparacao_rivais_sinuca 
+                ORDER BY $order";
+        $r = executeQuery($sql);
+        if ( $r["success"] && count($r["data"]) > 0 ) $resultado['get_rivais_estatistica_sinuca'] = $r["data"];
     }
 
     //Lista Statistica Jogadores
@@ -28,6 +38,17 @@
                 ORDER BY $order";
         $r = executeQuery($sql);
         if ( $r["success"] && count($r["data"]) > 0 ) $resultado['get_jogadores_estatistica'] = $r["data"];
+    }
+
+    //Lista Statistica Jogadores sinuca
+    function get_jogadores_estatistica_sinuca($id_jogador="NULL OR NULL IS NULL", $order="partidas_sinuca desc"){
+        global $resultado;
+        $sql = "SELECT *
+                FROM vw_jogador_estatistica_sinuca 
+                WHERE id = $id_jogador 
+                ORDER BY $order";
+        $r = executeQuery($sql);
+        if ( $r["success"] && count($r["data"]) > 0 ) $resultado['get_jogadores_estatistica_sinuca'] = $r["data"];
     }
 
     //Lista jogadores
@@ -52,12 +73,24 @@
         if ( $r["success"] && count($r["data"]) > 0 ) $resultado['get_partidas'] = $r["data"];
     }
 
+    //Lista partidas sinuca
+    function get_partidas_sinuca($id_partida="NULL OR NULL IS NULL"){
+        global $resultado;
+        $sql = "SELECT *
+                FROM partida_sinuca
+                WHERE id = $id_partida
+                ORDER BY id DESC, data_hora DESC;";
+        $r = executeQuery($sql);
+        if ( $r["success"] && count($r["data"]) > 0 ) $resultado['get_partidas_sinuca'] = $r["data"];
+    }
+
     // Verifica se o método de requisição é POST
     /*if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $opcao = isset($_POST['opcao']) ? $_POST['opcao'] : '';*/
     if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $opcao = isset($_GET['opcao']) ? $_GET['opcao'] : '';
         if($opcao == "ALL") $opcao = ['get_jogadores', 'get_partidas', 'get_jogadores_estatistica', 'get_duplas_estatistica'];
+        elseif($opcao == "SINUCA") $opcao = ['get_jogadores', 'get_partidas_sinuca', 'get_jogadores_estatistica_sinuca', 'get_rivais_estatistica_sinuca'];
         if (!is_array($opcao) && strpos($opcao, ',') !== false) $opcao = explode(',', $opcao);
         elseif (!is_array($opcao)) $opcao = [$opcao];
         
@@ -76,6 +109,12 @@
                 case 'get_duplas_estatistica':
                     get_duplas_estatistica();
                     break;
+                case 'get_partidas_sinuca':
+                    get_partidas_sinuca();
+                case 'get_jogadores_estatistica_sinuca':
+                    get_jogadores_estatistica_sinuca();
+                case 'get_rivais_estatistica_sinuca':
+                    get_rivais_estatistica_sinuca();
             }
         }
 
