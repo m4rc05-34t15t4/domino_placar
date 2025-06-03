@@ -14,16 +14,18 @@
         global $resultado;
         $sql = "SELECT *
                 FROM vw_dupla_estatistica 
+                WHERE PARTIDAS > 0 
                 ORDER BY $order";
         $r = executeQuery($sql);
         if ( $r["success"] && count($r["data"]) > 0 ) $resultado['get_duplas_estatistica'] = $r["data"];
     }
 
-    //Lista Statistica Duplas Jogadores
+    //Lista Statistica Rivais Jogadores Sinuca
     function get_rivais_estatistica_sinuca($order="partidas DESC"){
         global $resultado;
         $sql = "SELECT *
                 FROM vw_comparacao_rivais_sinuca 
+                WHERE PARTIDAS > 0 
                 ORDER BY $order";
         $r = executeQuery($sql);
         if ( $r["success"] && count($r["data"]) > 0 ) $resultado['get_rivais_estatistica_sinuca'] = $r["data"];
@@ -34,7 +36,7 @@
         global $resultado;
         $sql = "SELECT *
                 FROM vw_jogador_estatistica 
-                WHERE id = $id_jogador 
+                WHERE id = $id_jogador AND PARTIDAS > 0 
                 ORDER BY $order";
         $r = executeQuery($sql);
         if ( $r["success"] && count($r["data"]) > 0 ) $resultado['get_jogadores_estatistica'] = $r["data"];
@@ -45,7 +47,7 @@
         global $resultado;
         $sql = "SELECT *
                 FROM vw_jogador_estatistica_sinuca 
-                WHERE id = $id_jogador 
+                WHERE id = $id_jogador AND PARTIDAS_SINUCA > 0 
                 ORDER BY $order";
         $r = executeQuery($sql);
         if ( $r["success"] && count($r["data"]) > 0 ) $resultado['get_jogadores_estatistica_sinuca'] = $r["data"];

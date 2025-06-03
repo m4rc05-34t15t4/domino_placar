@@ -375,26 +375,14 @@ document.addEventListener('DOMContentLoaded', function() {
             var { nome, ...jog_v_a } = v_a;
             Object.entries(jog_v_a).forEach(([id_b, v_b]) => { 
                 $indice = String(v_b.id_rival).split(",").indexOf(id_a);
-                /*$indice_rival = $indice == 0 ? 1 : 0;
-                $part = parseInt(v_b.partidas);
-                $vit = String(v_b.vitorias).split(",");
-                $pla_vit = String(v_b.placar_vitoria).split(",");
-                $pla_derr = String(v_b.placar_derrota).split(",");
-                $meri = String(v_b.meritos).split(",");
-                $merd = String(v_b.merdas).split(",");
-                $emp = parseInt(v_b.empates);
-                $s = $part - $emp;
-                $derr = [$s - parseInt($vit[0]), $s - parseInt($vit[1])];
-                $v_b1 = {"vitorias" : $vit[$indice], "placar_vitoria" : $pla_vit[$indice], "placar_derrota" : $pla_derr[$indice], "merito" : $meri[$indice], "derrotas" : $derr[$indice], "merda" : $merd[$indice], "empates" : $emp};
-                $v_b2 = {"vitorias" : $vit[$indice_rival], "placar_vitoria" : $pla_vit[$indice_rival], "placar_derrota" : $pla_derr[$indice_rival], "merito" : $meri[$indice_rival], "derrotas" : $derr[$indice_rival], "merda" : $merd[$indice_rival], "empates" : $emp};
-                $v_b1["pontos"] = calcular_pontos($v_b1);
-                $v_b2["pontos"] = calcular_pontos($v_b2);
-                */
                 var { $v_b1, $v_b2 } = separa_dados_rivais(v_b, $indice);
-                $RIVAIS_ESTATISTICAS[id_a][id_b].pontos = `${$v_b1.pontos},${$v_b2.pontos}`;
-                //$RIVAIS_ESTATISTICAS[id_a][id_b].indice = $indice;
+                $indice_rival = $indice == 0 ? 1 : 0;
+                $p = [0, 0];
+                $p[$indice] = $v_b1.pontos;
+                $p[$indice_rival] = $v_b2.pontos;
+                $RIVAIS_ESTATISTICAS[id_a][id_b].pontos = $p.join(",");
             });
-            var { nome, ...jogadores } = $RIVAIS_ESTATISTICAS[id_a]; // Separar campo 'nome'
+            var { nome,  ...jogadores } = $RIVAIS_ESTATISTICAS[id_a]; // Separar campo 'nome'
             const jogadoresOrdenados = Object.entries(jogadores).sort(([, a], [, b]) => parseInt(b.pontos.split(",")[$indice_rival] ?? 0) - parseInt(a.pontos.split(",")[$indice_rival] ?? 0)); // Ordenar por pontos (decrescente)
             const resultadoOrdenado = Object.assign( {}, ...jogadoresOrdenados.map(([id, v]) => ({ ['j' + id]: v }))); // Recriar objeto com prefixo na chave (ex: j2, j4)
             
@@ -404,13 +392,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 $html += `
                     <tr>
                         <td id="jogador-dupla_${id_b}" jog="${id_a}" dados="${Object.values(v_b).join(';')}" class="linha_estatistica_dupla text-start">${v_b.nome}</td>
-                        <td>${$v_b2.pontos}|<b class="text-primary">${$v_b1.pontos}</b></td>
+                        <td>${$v_b2.pontos}<span style="color: #999">/</span><b class="text-primary">${$v_b1.pontos}</b></td>
                         <td>${v_b.partidas}</td>
-                        <td>${$v_b2.vitorias}|<b class="text-primary">${$v_b1.vitorias}</b></td>
-                        <td>${$v_b2.merito}|<b class="text-primary">${$v_b1.merito}</b></td>
-                        <td>${$v_b2.merda}|<b class="text-primary">${$v_b1.merda}</b></td>
-                        <td>${$v_b2.placar_vitoria}|<b class="text-primary">${$v_b1.placar_vitoria}</b></td>
-                        <td>${$v_b2.placar_derrota}|<b class="text-primary">${$v_b1.placar_derrota}</b></td>
+                        <td>${$v_b2.vitorias}<span style="color: #999">/</span><b class="text-primary">${$v_b1.vitorias}</b></td>
+                        <td>${$v_b2.merito}<span style="color: #999">/</span><b class="text-primary">${$v_b1.merito}</b></td>
+                        <td>${$v_b2.merda}<span style="color: #999">/</span><b class="text-primary">${$v_b1.merda}</b></td>
+                        <td>${$v_b2.placar_vitoria}<span style="color: #999">/</span><b class="text-primary">${$v_b1.placar_vitoria}</b></td>
+                        <td>${$v_b2.placar_derrota}<span style="color: #999">/</span><b class="text-primary">${$v_b1.placar_derrota}</b></td>
                     </tr>`;
             });
             $html += `</tbody></table></div>`;

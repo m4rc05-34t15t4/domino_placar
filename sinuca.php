@@ -53,7 +53,7 @@
                         Estatísticas
                     </button>
 
-                    <!--<button id="ver_estatisticas_rivais" class="btn btn-dark d-flex align-items-center gap-1">
+                    <button id="ver_estatisticas_rivais" class="btn btn-dark d-flex align-items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-duo-stats"
                             viewBox="0 0 24 24" aria-hidden="true">
@@ -69,7 +69,7 @@
                             <path d="M20 22v-2a4 4 0 0 0-4-4"></path>
                         </svg>
                         Est. Rivais
-                    </button>-->
+                    </button>
 
                     <button id="add_jogadores" class="btn btn-success d-flex align-items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users" aria-hidden="true">
