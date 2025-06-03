@@ -1,3 +1,163 @@
+
+-- 01/06/2025
+
+CREATE OR REPLACE VIEW public.vw_partida_sinuca_com_vencedor
+ AS
+ SELECT partida_sinuca.id,
+    partida_sinuca.data_hora,
+    partida_sinuca.jogador1_id,
+    partida_sinuca.jogador2_id,
+    partida_sinuca.placar1,
+    partida_sinuca.placar2,
+    partida_sinuca.jogadorbct,
+        CASE
+            WHEN partida_sinuca.jogadorbct IS NOT NULL THEN
+            CASE
+                WHEN partida_sinuca.jogadorbct = ANY (ARRAY[1]) THEN 'B'::text
+                WHEN partida_sinuca.jogadorbct = ANY (ARRAY[2]) THEN 'A'::text
+                WHEN partida_sinuca.placar1 > partida_sinuca.placar2 THEN 'A'::text
+                WHEN partida_sinuca.placar2 > partida_sinuca.placar1 THEN 'B'::text
+                ELSE 'AB'::text
+            END
+            ELSE
+            CASE
+                WHEN partida_sinuca.placar1 > partida_sinuca.placar2 THEN 'A'::text
+                WHEN partida_sinuca.placar2 > partida_sinuca.placar1 THEN 'B'::text
+                ELSE 'AB'::text
+            END
+        END AS vencedor
+   FROM partida_sinuca;
+
+
+
+
+
+CREATE OR REPLACE VIEW public.vw_jogador_estatistica_sinuca
+ AS
+ SELECT j.id,
+    j.nome,
+    count(p.id) AS partidas_sinuca,
+    sum(
+        CASE
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'A'::text THEN 1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'B'::text THEN 1
+            ELSE 0
+        END) AS vitorias,
+    sum(
+        CASE
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'B'::text THEN 1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'A'::text THEN 1
+            ELSE 0
+        END) AS derrotas,
+    sum(
+        CASE
+            WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.vencedor = 'AB'::text THEN 1
+            ELSE 0
+        END) AS empates,
+    sum(
+        CASE
+            WHEN p.jogadorbct IS NOT NULL AND (p.jogadorbct = 1 AND j.id = p.jogador1_id OR p.jogadorbct = 2 AND j.id = p.jogador2_id ) THEN 1
+            ELSE 0
+        END) AS merda,
+    sum(
+        CASE
+            WHEN (p.vencedor = 'A'::text AND p.placar2 = 0 AND p.jogador1_id = j.id) OR (p.vencedor = 'B'::text AND p.placar1 = 0 AND p.jogador2_id = j.id) THEN 1
+            ELSE 0
+        END) AS merito,
+    sum(
+        CASE
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'A'::text THEN p.placar1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'B'::text THEN p.placar2
+            ELSE 0
+        END) AS placar_vitoria,
+    sum(
+        CASE
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'B'::text THEN p.placar1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'A'::text THEN p.placar2
+            ELSE 0
+        END) AS placar_derrota
+   FROM jogador j
+     LEFT JOIN vw_partida_sinuca_com_vencedor p ON j.id = p.jogador1_id OR j.id = p.jogador2_id 
+  GROUP BY j.id, j.nome
+  ORDER BY (count(p.id)) DESC;
+
+
+DROP VIEW IF EXISTS public.vw_comparacao_rivais_sinuca;
+CREATE OR REPLACE VIEW public.vw_comparacao_rivais_sinuca AS
+WITH confrontos AS (
+    SELECT 
+        LEAST(p.jogador1_id, p.jogador2_id) AS jogador1_id,
+        GREATEST(p.jogador1_id, p.jogador2_id) AS jogador2_id,
+        j.id AS jogador_id,
+        j.nome AS nome_jogador,
+        (LEAST(p.jogador1_id, p.jogador2_id))::text || ',' || (GREATEST(p.jogador1_id, p.jogador2_id))::text AS id_rival,
+        CASE 
+            WHEN p.jogador1_id < p.jogador2_id THEN j1.nome || ',' || j2.nome
+            ELSE j2.nome || ',' || j1.nome
+        END AS nome_rival,
+
+        CASE 
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'A' THEN 1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'B' THEN 1
+            ELSE 0
+        END AS vitoria,
+
+        CASE 
+            WHEN p.vencedor = 'AB' THEN 1 ELSE 0
+        END AS empate,
+
+        -- Novo: placar_pro só se venceu
+        CASE 
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'A' THEN p.placar1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'B' THEN p.placar2
+            ELSE 0
+        END AS placar_pro,
+
+        -- Já corrigido antes: placar_contra só se perdeu
+        CASE 
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'B' THEN p.placar1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'A' THEN p.placar2
+            ELSE 0
+        END AS placar_contra,
+
+        CASE 
+            WHEN p.jogadorbct IS NOT NULL AND ((p.jogadorbct = 1 AND j.id = p.jogador1_id) OR (p.jogadorbct = 2 AND j.id = p.jogador2_id)) THEN 1
+            ELSE 0
+        END AS merda,
+
+        CASE
+            WHEN p.vencedor = 'A' AND p.placar2 = 0 AND p.jogador1_id = j.id THEN 1
+            WHEN p.vencedor = 'B' AND p.placar1 = 0 AND p.jogador2_id = j.id THEN 1
+            ELSE 0
+        END AS merito
+    FROM vw_partida_sinuca_com_vencedor p
+    JOIN jogador j1 ON j1.id = p.jogador1_id
+    JOIN jogador j2 ON j2.id = p.jogador2_id
+    JOIN jogador j ON j.id IN (p.jogador1_id, p.jogador2_id)
+)
+SELECT 
+    id_rival,
+    nome_rival,
+    COUNT(*) / 2 AS partidas,
+    SUM(empate) / 2 AS empates,
+    STRING_AGG(vitoria::text, ',' ORDER BY jogador_id) AS vitorias,
+    STRING_AGG(placar_pro::text, ',' ORDER BY jogador_id) AS placar_vitoria,
+    STRING_AGG(placar_contra::text, ',' ORDER BY jogador_id) AS placar_derrota,
+    STRING_AGG(merda::text, ',' ORDER BY jogador_id) AS merdas,
+    STRING_AGG(merito::text, ',' ORDER BY jogador_id) AS meritos
+FROM confrontos
+GROUP BY id_rival, nome_rival
+ORDER BY partidas DESC;
+
+
+
+
+
+
+
+
+
+
 --30/05/25
 
 
