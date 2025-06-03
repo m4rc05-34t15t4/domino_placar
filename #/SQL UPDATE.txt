@@ -1,5 +1,7 @@
 --30/05/25
 
+
+
 DROP VIEW IF EXISTS public.vw_jogador_estatistica;
 CREATE OR REPLACE VIEW public.vw_jogador_estatistica AS
 SELECT 
