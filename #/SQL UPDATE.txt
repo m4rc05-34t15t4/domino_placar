@@ -1,3 +1,86 @@
+-- 04/06/2025
+
+DROP VIEW IF EXISTS public.vw_comparacao_rivais_sinuca;
+CREATE OR REPLACE VIEW public.vw_comparacao_rivais_sinuca AS
+WITH confrontos AS (
+    SELECT 
+        LEAST(p.jogador1_id, p.jogador2_id) AS jogador1_id,
+        GREATEST(p.jogador1_id, p.jogador2_id) AS jogador2_id,
+        j.id AS jogador_id,
+        (LEAST(p.jogador1_id, p.jogador2_id)::text || ',' || GREATEST(p.jogador1_id, p.jogador2_id)::text) AS id_rival,
+        CASE
+            WHEN p.jogador1_id < p.jogador2_id THEN j1.nome || ',' || j2.nome
+            ELSE j2.nome || ',' || j1.nome
+        END AS nome_rival,
+        CASE WHEN j.id = p.jogador1_id AND p.vencedor = 'A' THEN 1
+             WHEN j.id = p.jogador2_id AND p.vencedor = 'B' THEN 1
+             ELSE 0
+        END AS vitoria,
+        CASE WHEN p.vencedor = 'AB' THEN 1 ELSE 0 END AS empate,
+        CASE WHEN j.id = p.jogador1_id AND p.vencedor = 'A' THEN p.placar1
+             WHEN j.id = p.jogador2_id AND p.vencedor = 'B' THEN p.placar2
+             ELSE 0
+        END AS placar_pro,
+        CASE WHEN j.id = p.jogador1_id AND p.vencedor = 'B' THEN p.placar1
+             WHEN j.id = p.jogador2_id AND p.vencedor = 'A' THEN p.placar2
+             ELSE 0
+        END AS placar_contra,
+        CASE
+            WHEN p.jogadorbct IS NOT NULL AND (p.jogadorbct = 1 AND j.id = p.jogador1_id OR p.jogadorbct = 2 AND j.id = p.jogador2_id)
+            THEN 1 ELSE 0
+        END AS merda,
+        CASE
+            WHEN p.vencedor = 'A' AND p.placar2 = 0 AND j.id = p.jogador1_id THEN 1
+            WHEN p.vencedor = 'B' AND p.placar1 = 0 AND j.id = p.jogador2_id THEN 1
+            ELSE 0
+        END AS merito
+    FROM vw_partida_sinuca_com_vencedor p
+    JOIN jogador j1 ON j1.id = p.jogador1_id
+    JOIN jogador j2 ON j2.id = p.jogador2_id
+    JOIN jogador j ON j.id IN (p.jogador1_id, p.jogador2_id)
+),
+agregado_por_jogador AS (
+    SELECT 
+        id_rival,
+        nome_rival,
+        jogador_id,
+        SUM(vitoria) AS vitoria,
+        SUM(placar_pro) AS placar_vitoria,
+        SUM(placar_contra) AS placar_derrota,
+        SUM(merda) AS merda,
+        SUM(merito) AS merito,
+        SUM(empate) AS empate
+    FROM confrontos
+    GROUP BY id_rival, nome_rival, jogador_id
+),
+contagem_partidas AS (
+    SELECT 
+        LEAST(jogador1_id, jogador2_id)::text || ',' || GREATEST(jogador1_id, jogador2_id)::text AS id_rival,
+        COUNT(*) AS partidas
+    FROM vw_partida_sinuca_com_vencedor
+    GROUP BY LEAST(jogador1_id, jogador2_id), GREATEST(jogador1_id, jogador2_id)
+),
+agregado_final AS (
+    SELECT 
+        a.id_rival,
+        a.nome_rival,
+        STRING_AGG(a.vitoria::text, ',' ORDER BY a.jogador_id) AS vitorias,
+        STRING_AGG(a.placar_vitoria::text, ',' ORDER BY a.jogador_id) AS placar_vitoria,
+        STRING_AGG(a.placar_derrota::text, ',' ORDER BY a.jogador_id) AS placar_derrota,
+        STRING_AGG(a.merda::text, ',' ORDER BY a.jogador_id) AS merdas,
+        STRING_AGG(a.merito::text, ',' ORDER BY a.jogador_id) AS meritos,
+        (SUM(a.empate))::int AS empates,
+        p.partidas
+    FROM agregado_por_jogador a
+    JOIN contagem_partidas p ON p.id_rival = a.id_rival
+    GROUP BY a.id_rival, a.nome_rival, p.partidas
+)
+SELECT * FROM agregado_final
+ORDER BY partidas DESC;
+
+
+
+
 
 -- 01/06/2025
 

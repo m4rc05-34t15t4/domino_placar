@@ -365,8 +365,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <th class="py-0">🏆</th>
                                 <th class="py-0">🎯</th>
                                 <th class="py-0">💩</th>
-                                <th class="py-0">⚽</th>
-                                <th class="py-0">😞</th>
                             </tr>
                         </thead>
                         <tbody>`;
@@ -383,9 +381,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 $RIVAIS_ESTATISTICAS[id_a][id_b].pontos = $p.join(",");
             });
             var { nome,  ...jogadores } = $RIVAIS_ESTATISTICAS[id_a]; // Separar campo 'nome'
-            const jogadoresOrdenados = Object.entries(jogadores).sort(([, a], [, b]) => parseInt(b.pontos.split(",")[$indice_rival] ?? 0) - parseInt(a.pontos.split(",")[$indice_rival] ?? 0)); // Ordenar por pontos (decrescente)
+            const jogadoresOrdenados = Object.entries(jogadores).sort(([, a], [, b]) => { parseInt(b.pontos.split(",")[$indice_rival] ?? 0) - parseInt(a.pontos.split(",")[$indice_rival] ?? 0); }); // Ordenar por pontos (decrescente)
             const resultadoOrdenado = Object.assign( {}, ...jogadoresOrdenados.map(([id, v]) => ({ ['j' + id]: v }))); // Recriar objeto com prefixo na chave (ex: j2, j4)
-            
             Object.entries(resultadoOrdenado).forEach(([id_b, v_b]) => {
                 $indice = String(v_b.id_rival).split(",").indexOf(id_a);
                 const {$v_b1, $v_b2} = separa_dados_rivais(v_b, $indice);
@@ -397,8 +394,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td>${$v_b2.vitorias}<span style="color: #999">/</span><b class="text-primary">${$v_b1.vitorias}</b></td>
                         <td>${$v_b2.merito}<span style="color: #999">/</span><b class="text-primary">${$v_b1.merito}</b></td>
                         <td>${$v_b2.merda}<span style="color: #999">/</span><b class="text-primary">${$v_b1.merda}</b></td>
-                        <td>${$v_b2.placar_vitoria}<span style="color: #999">/</span><b class="text-primary">${$v_b1.placar_vitoria}</b></td>
-                        <td>${$v_b2.placar_derrota}<span style="color: #999">/</span><b class="text-primary">${$v_b1.placar_derrota}</b></td>
                     </tr>`;
             });
             $html += `</tbody></table></div>`;
@@ -800,10 +795,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });     
 
     $("#add_partida").click(function(){
-
-        //const now = new Date();
-        //const localDateTime = now.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
-        //document.getElementById('dataHora').value = localDateTime;
 
         // Preencher id
         $("#bt_submit").attr("id_partida", "0");
