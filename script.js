@@ -437,6 +437,48 @@ document.addEventListener('DOMContentLoaded', function() {
         popula_jog_estatisticas_totais(container);
     }
 
+    function criarCardRanking(emoji, titulo, jogador, corClasse = "primary") {
+        const card = document.createElement("div");
+        card.className = `card m-2 p-3 shadow-sm border-${corClasse}`;
+        card.style.width = "150px";
+        card.innerHTML = `
+            <div class="text-center fs-1">${emoji}</div>
+            <div class="text-center fw-bold fs-4 text-${corClasse}">${jogador.valor}</div>
+            <img src="${jogador.imagem}" alt="${jogador.nome}" class="rounded-circle mx-auto d-block my-2" width="70" height="70">
+            <div class="text-center small text-muted">${jogador.nome} (#${jogador.id})</div>
+        `;
+        return card;
+    }
+
+    function popularCardsRankingSemanal(rankings) {
+        const container = document.getElementById("container-rankSemanal");
+        container.innerHTML = "";
+    
+        rankings.forEach(ranking => {
+            // Adiciona separador da semana
+            const dataFormatada = formatarDataISO(ranking.semana); // Ex: "10/06/2024"
+            $("#container-rank-semanal").append(`
+                <div class="d-flex align-items-center my-2 w-100">
+                    <div class="flex-grow-1 border-top"></div>
+                    <div class="px-3 text-nowrap text-muted small">
+                        Semana ${ranking.semana_numero} - ${dataFormatada}
+                    </div>
+                    <div class="flex-grow-1 border-top"></div>
+                </div>
+            `);
+    
+            const cardsSemana = document.createElement("div");
+            cardsSemana.className = "d-flex justify-content-around flex-wrap";
+    
+            // Criar os 3 cards da semana
+            cardsSemana.appendChild(criarCardRanking("💩", "Merda", ranking.merda, "danger"));
+            cardsSemana.appendChild(criarCardRanking("⭐", "Ponto", ranking.ponto, "primary"));
+            cardsSemana.appendChild(criarCardRanking("🏅", "Mérito", ranking.merito, "success"));
+    
+            container.appendChild(cardsSemana);
+        });
+    }
+
     function popularCardsPartidas(partidas, jogadores) {
         const container = document.getElementById("container-partidas"); // certifique-se de que existe uma div com esse id
         container.innerHTML = ""; // Limpa o conteúdo anterior
@@ -675,6 +717,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
 
+    function PrazoEdicao(dataStr) {
+        const dataInformada = new Date(dataStr);
+        const agora = new Date();
+    
+        // Diferença em milissegundos
+        const diffMs = Math.abs(agora - dataInformada);
+        
+        // 1 dia em milissegundos
+        const umDiaMs = 24 * 60 * 60 * 1000;
+    
+        return diffMs <= umDiaMs;
+    }
+
+    function prazo_time(dataTexto, prazo_min = 10) {
+        // Converte o texto para um objeto Date
+        const data = new Date(dataTexto.replace(" ", "T"));
+        const agora = new Date();
+        const diferencaMs = Math.abs(agora - data);
+        const MinutosMs = prazo_min * 60 * 1000;
+        return diferencaMs <= MinutosMs;
+    }
+      
+
     function preencherFormularioPartida(valores) {
 
         const campos = ["id", "data_hora", "jogador1_id", "jogador2_id", "jogador3_id", "jogador4_id", "placar1", "placar2", "jogadorbct", "jogadas"];
@@ -724,10 +789,10 @@ document.addEventListener('DOMContentLoaded', function() {
         $("#bt_submit").html("Salvar");
         $("#ModalPartida_titulo").html(`(${d.id}) ${d.data_hora.slice(0, 16)}`);
         
-        if(administrador()) {
+        if( administrador() && PrazoEdicao(d.data_hora) ) {
             $("#bt-close-partida").fadeOut(0);
             $("#bt_excluir_partida").attr("id_partida", d.id);
-            $("#bt_excluir_partida").fadeIn(0);
+            if(prazo_time(d.data_hora)) $("#bt_excluir_partida").fadeIn(0);
         }
     }
 

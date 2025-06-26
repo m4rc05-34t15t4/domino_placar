@@ -10,6 +10,14 @@
     }
 
     //Lista Statistica Duplas Jogadores
+    function get_rank_semanal(){
+        global $resultado;
+        $sql = "SELECT * FROM public.vw_rank_semanal;";
+        $r = executeQuery($sql);
+        if ( $r["success"] && count($r["data"]) > 0 ) $resultado['get_rank_semanal'] = $r["data"];
+    }
+
+    //Lista Statistica Duplas Jogadores
     function get_duplas_estatistica($order="partidas DESC"){
         global $resultado;
         $sql = "SELECT *
@@ -91,7 +99,7 @@
         $opcao = isset($_POST['opcao']) ? $_POST['opcao'] : '';*/
     if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $opcao = isset($_GET['opcao']) ? $_GET['opcao'] : '';
-        if($opcao == "ALL") $opcao = ['get_jogadores', 'get_partidas', 'get_jogadores_estatistica', 'get_duplas_estatistica'];
+        if($opcao == "ALL") $opcao = ['get_jogadores', 'get_partidas', 'get_jogadores_estatistica', 'get_duplas_estatistica', 'get_rank_semanal'];
         elseif($opcao == "SINUCA") $opcao = ['get_jogadores', 'get_partidas_sinuca', 'get_jogadores_estatistica_sinuca', 'get_rivais_estatistica_sinuca'];
         if (!is_array($opcao) && strpos($opcao, ',') !== false) $opcao = explode(',', $opcao);
         elseif (!is_array($opcao)) $opcao = [$opcao];
@@ -117,6 +125,8 @@
                     get_jogadores_estatistica_sinuca();
                 case 'get_rivais_estatistica_sinuca':
                     get_rivais_estatistica_sinuca();
+                case 'get_rank_semanal':
+                    get_rank_semanal();
             }
         }
 

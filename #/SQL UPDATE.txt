@@ -1,3 +1,188 @@
+--26/06/2025
+
+--DROP FUNCTION IF EXISTS fn_jogador_estatisticas_filtro(integer);
+CREATE OR REPLACE FUNCTION fn_jogador_estatisticas_filtro(p_limite_partidas INTEGER)
+RETURNS TABLE (
+    id INTEGER,
+    nome TEXT,
+    partidas INTEGER,
+    vitorias INTEGER,
+    derrotas INTEGER,
+    empates INTEGER,
+    merda INTEGER,
+    merito INTEGER,
+    laelo INTEGER,
+    cruzada INTEGER,
+    placar_vitoria INTEGER,
+    placar_derrota INTEGER
+)
+AS $$
+BEGIN
+  RETURN QUERY
+  WITH partidas_com_rank AS (
+    SELECT
+      p.*,
+      j.id AS jogador_id,
+      ROW_NUMBER() OVER (
+        PARTITION BY j.id
+        ORDER BY p.data_hora DESC NULLS LAST
+      ) AS rn
+    FROM jogador j
+    LEFT JOIN vw_partida_com_vencedor p
+      ON j.id = p.jogador1_id OR j.id = p.jogador2_id OR j.id = p.jogador3_id OR j.id = p.jogador4_id
+  )
+  SELECT
+    j.id,
+    j.nome::TEXT,
+    COUNT(p.id)::INTEGER AS partidas,
+    SUM(CASE WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A'
+             OR (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B' THEN 1 ELSE 0 END)::INTEGER AS vitorias,
+    SUM(CASE WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'B'
+             OR (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'A' THEN 1 ELSE 0 END)::INTEGER AS derrotas,
+    SUM(CASE WHEN (j.id IN (p.jogador1_id, p.jogador2_id, p.jogador3_id, p.jogador4_id))
+             AND p.dupla_vencedora = 'AB' THEN 1 ELSE 0 END)::INTEGER AS empates,
+    SUM(CASE WHEN p.jogadorbct IS NOT NULL AND (
+               (p.jogadorbct = 1 AND j.id = p.jogador1_id) OR
+               (p.jogadorbct = 2 AND j.id = p.jogador2_id) OR
+               (p.jogadorbct = 3 AND j.id = p.jogador3_id) OR
+               (p.jogadorbct = 4 AND j.id = p.jogador4_id)) THEN 1 ELSE 0 END)::INTEGER AS merda,
+    SUM(CASE WHEN ((j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A'
+             OR (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B')
+             AND (p.jogadas ILIKE '%C%' OR p.jogadas ILIKE '%L%') THEN 1 ELSE 0 END)::INTEGER AS merito,
+    SUM(CASE WHEN ((j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A'
+             OR (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B')
+             AND p.jogadas ILIKE '%L%' THEN 1 ELSE 0 END)::INTEGER AS laelo,
+    SUM(CASE WHEN ((j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A'
+             OR (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B')
+             AND p.jogadas ILIKE '%C%' THEN 1 ELSE 0 END)::INTEGER AS cruzada,
+    SUM(CASE WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A' THEN p.placar1
+             WHEN (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B' THEN p.placar2
+             ELSE 0 END)::INTEGER AS placar_vitoria,
+    SUM(CASE WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'B' THEN p.placar1
+             WHEN (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'A' THEN p.placar2
+             ELSE 0 END)::INTEGER AS placar_derrota
+  FROM jogador j
+  LEFT JOIN partidas_com_rank p
+    ON j.id = p.jogador_id AND p.rn <= p_limite_partidas
+  GROUP BY j.id, j.nome
+  ORDER BY COUNT(p.id) DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+
+--16/062025
+
+CREATE OR REPLACE VIEW public.vw_rank_semanal AS 
+WITH estatistica_semanal AS (
+  SELECT
+    j.id AS jogador_id,
+    j.nome,
+    date_trunc('week', p.data_hora)::date AS inicio_semana,
+    (date_trunc('week', p.data_hora) + interval '6 days')::date AS fim_semana,
+
+    -- Pontos
+    sum(
+        CASE
+            WHEN ((j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A') OR
+                 ((j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B')
+            THEN 1 ELSE 0 END
+    ) AS pontos,
+
+    -- Vitórias
+    count(
+        CASE
+            WHEN ((j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A') OR
+                 ((j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B')
+            THEN 1 ELSE NULL END
+    ) AS vitorias,
+
+    -- Merda
+    sum(
+        CASE
+            WHEN p.jogadorbct IS NOT NULL AND (
+                 (p.jogadorbct = 1 AND j.id = p.jogador1_id) OR
+                 (p.jogadorbct = 2 AND j.id = p.jogador2_id) OR
+                 (p.jogadorbct = 3 AND j.id = p.jogador3_id) OR
+                 (p.jogadorbct = 4 AND j.id = p.jogador4_id)
+            )
+            THEN 1 ELSE 0 END
+    ) AS merda,
+
+    -- Mérito
+    sum(
+        CASE
+            WHEN (
+                ((j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A') OR
+                ((j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B')
+            ) AND (p.jogadas ~~* '%C%' OR p.jogadas ~~* '%L%')
+            THEN 1 ELSE 0 END
+    ) AS merito
+
+  FROM jogador j
+  LEFT JOIN vw_partida_com_vencedor p
+    ON j.id IN (p.jogador1_id, p.jogador2_id, p.jogador3_id, p.jogador4_id)
+  WHERE p.data_hora IS NOT NULL
+  GROUP BY j.id, j.nome, date_trunc('week', p.data_hora)
+),
+ranking_por_semana AS (
+  SELECT *,
+         RANK() OVER (PARTITION BY inicio_semana ORDER BY pontos DESC) AS rk_pontos,
+         ROW_NUMBER() OVER (PARTITION BY inicio_semana ORDER BY merda DESC, pontos ASC, vitorias ASC) AS rn_merda,
+         ROW_NUMBER() OVER (PARTITION BY inicio_semana ORDER BY merito DESC, pontos DESC, vitorias DESC) AS rn_merito
+  FROM estatistica_semanal
+),
+semanas_numeradas AS (
+  SELECT DISTINCT
+         inicio_semana,
+         ROW_NUMBER() OVER (ORDER BY inicio_semana) AS semana
+  FROM ranking_por_semana
+),
+top_semanal AS (
+  SELECT DISTINCT
+    sn.semana,
+    es.inicio_semana,
+    es.fim_semana,
+
+    -- Top pontos
+    FIRST_VALUE(es.jogador_id) OVER (PARTITION BY es.inicio_semana ORDER BY rk_pontos) AS id_top_pontos,
+    FIRST_VALUE(es.nome) OVER (PARTITION BY es.inicio_semana ORDER BY rk_pontos) AS nome_top_pontos,
+    FIRST_VALUE(es.pontos) OVER (PARTITION BY es.inicio_semana ORDER BY rk_pontos) AS pontos,
+
+    -- Top merda
+    FIRST_VALUE(es.jogador_id) OVER (PARTITION BY es.inicio_semana ORDER BY rn_merda) AS id_top_merda,
+    FIRST_VALUE(es.nome) OVER (PARTITION BY es.inicio_semana ORDER BY rn_merda) AS nome_top_merda,
+    FIRST_VALUE(es.merda) OVER (PARTITION BY es.inicio_semana ORDER BY rn_merda) AS merda,
+
+    -- Top mérito
+    FIRST_VALUE(es.jogador_id) OVER (PARTITION BY es.inicio_semana ORDER BY rn_merito) AS id_top_merito,
+    FIRST_VALUE(es.nome) OVER (PARTITION BY es.inicio_semana ORDER BY rn_merito) AS nome_top_merito,
+    FIRST_VALUE(es.merito) OVER (PARTITION BY es.inicio_semana ORDER BY rn_merito) AS merito
+
+  FROM ranking_por_semana es
+  JOIN semanas_numeradas sn ON es.inicio_semana = sn.inicio_semana
+)
+SELECT DISTINCT
+  semana,
+  inicio_semana,
+  fim_semana,
+  id_top_pontos,
+  nome_top_pontos,
+  pontos,
+  id_top_merda,
+  nome_top_merda,
+  merda,
+  id_top_merito,
+  nome_top_merito,
+  merito
+FROM top_semanal
+ORDER BY semana DESC;
+
+
+
+
 -- 04/06/2025
 
 DROP VIEW IF EXISTS public.vw_comparacao_rivais_sinuca;

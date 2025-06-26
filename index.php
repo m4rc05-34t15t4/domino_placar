@@ -88,6 +88,8 @@
             <div id="container-jogadores" class="d-none div_cards-conteudo d-flex justify-content-center align-items-center flex-wrap w-fill h-fill"></div>
             
             <div id="container-duplasjogadores" class="d-none div_cards-conteudo d-flex justify-content-center align-items-start flex-wrap w-fill h-fill"></div>
+
+            <div id="container-rankSemanal" class="d-none div_cards-conteudo d-flex justify-content-center align-items-start flex-wrap w-fill h-fill"></div>
         
         </div>
 
