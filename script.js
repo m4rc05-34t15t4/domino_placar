@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-    $JOGADORES =  {};
+    //$JOGADORES =  {};
     $JOGADORES_ESTATISTICAS = {};
     $JOG_ESTATISTICAS_TOTAIS = {
         "partidas" : { "titulo" : "🎮 Partidas", "dados" : [[0, 0, null]], "total" : 0 },
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function editarJogador(idt) {
+    /*async function editarJogador(idt) {
         const input = document.getElementById(`jogador-${idt}`);
         if (input.hasAttribute("readonly")) {
             input.removeAttribute("readonly");
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             }
         }
-    }
+    }*/
 
     function renderizarListaJogadores() {
         const container = document.getElementById("listaJogadores");
@@ -200,14 +200,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function validarNome(nome) {
-    // Verifica se o nome é uma string não vazia e tem pelo menos 2 caracteres
-    if (typeof nome !== 'string' || nome.trim().length < 3) {
-        alert("Por favor, insira um nome válido com pelo menos 2 caracteres.");
-        return false;
-    }
-    return true;
-}
+    /*function validarNome(nome) {
+        // Verifica se o nome é uma string não vazia e tem pelo menos 2 caracteres
+        if (typeof nome !== 'string' || nome.trim().length < 3) {
+            alert("Por favor, insira um nome válido com pelo menos 2 caracteres.");
+            return false;
+        }
+        return true;
+    }*/
 
     function validarDados(dados) {
         // Verifica se todos os jogadores foram selecionados (id > 0)
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     }
 
-    function formatarDataISO(dataISO) {
+    /*function formatarDataISO(dataISO) {
         const [ano, mes, dia] = dataISO.split("-").map(Number);
         const data = new Date(ano, mes - 1, dia); // forçando local time
         const diaFormatado = String(data.getDate()).padStart(2, '0');
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const dias = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
         const diaSemana = dias[data.getDay()];
         return `${diaFormatado}/${mesFormatado}/${anoFormatado} - ${diaSemana}`;
-    }
+    }*/
     
     function verificar_vencedor(partida){
         $vencedor = "";
@@ -569,7 +569,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return vencedores;
     }
 
-
     async function deletar_partida($id){
         const dados = {
             id: $id,
@@ -607,7 +606,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function cadastrar_jogador(){
+    /*async function cadastrar_jogador(){
         
         // Cria um objeto com os dados do formulário
         var dados = {
@@ -645,7 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alert("Erro ao salvar a jogador.");
         }
         
-    }
+    }*/
 
     async function cadastrar_partida(){
 
@@ -692,9 +691,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function administrador() {
-        return window.location.hash === "#adm";
-    }
+    /*function administrador() {
+        return window.location.hash === "#aaa";
+    }*/
 
     function aplicarSelecaoJogadas(texto) {
 
@@ -717,7 +716,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
 
-    function PrazoEdicao(dataStr) {
+    /*function PrazoEdicao(dataStr) {
         const dataInformada = new Date(dataStr);
         const agora = new Date();
     
@@ -737,8 +736,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const diferencaMs = Math.abs(agora - data);
         const MinutosMs = prazo_min * 60 * 1000;
         return diferencaMs <= MinutosMs;
-    }
-      
+    }*/
 
     function preencherFormularioPartida(valores) {
 
@@ -873,13 +871,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    $('.img_merda').click(function(){
+    /*$('.img_merda').click(function(){
         if ($(this).attr('src').includes('merda-fill.png')) $(this).attr('src', 'img/merda.png');
         else {
             $('.img_merda').attr('src', 'img/merda.png');
             $(this).attr('src', 'img/merda-fill.png');
         }
-    });
+    });*/
 
     document.getElementById("formPartida").addEventListener("submit", async function(e) {
         e.preventDefault(); // Impede o envio tradicional
