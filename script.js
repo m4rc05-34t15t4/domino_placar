@@ -270,6 +270,51 @@ document.addEventListener('DOMContentLoaded', function() {
         return $vencedor;
     }
 
+    function criar_select_filtro_estatistica(container, val="almoço"){
+        
+        // Cria o elemento <select> com Bootstrap
+        const selectForm = document.createElement("select");
+        selectForm.className = "form-select mx-3 my-1";
+        selectForm.id = "select_filtro_estatistica";
+
+        // Cria e adiciona manualmente as opções
+        const option1 = document.createElement("option");
+        option1.value = "almoço";
+        option1.textContent = "Almoço";
+        selectForm.appendChild(option1);
+
+        const option2 = document.createElement("option");
+        option2.value = "fora_expediente";
+        option2.textContent = "Fora do Expediente";
+        selectForm.appendChild(option2);
+
+        const option3 = document.createElement("option");
+        option3.value = "all";
+        option3.textContent = "Geral";
+        selectForm.appendChild(option3);
+
+        container.prepend(selectForm);
+
+        document.getElementById("select_filtro_estatistica").value = val;
+
+        // Adiciona o evento após inserir no DOM
+        selectForm.addEventListener("change", function () {
+            const valor = this.value;
+
+            switch (valor) {
+            case "almoco":
+                executarFuncao1();
+                break;
+            case "fora_expediente":
+                executarFuncao2();
+                break;
+            case "all":
+                executarFuncao3();
+                break;
+            }
+        });
+    }
+
     function popula_jog_estatisticas_totais(container){
         //jogadores estatisticas totais
         for (const [key, valores] of Object.entries($JOG_ESTATISTICAS_TOTAIS)) $JOG_ESTATISTICAS_TOTAIS[key]['texto'] = valores["dados"][0][0] > 0 ? `${$JOG_ESTATISTICAS_TOTAIS[key]["dados"].map(v => `<span>${v[0]} ${v[2]}`).join('</span>')}</span>` : '--' ;
@@ -435,6 +480,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         popula_jog_estatisticas_totais(container);
+
+        criar_select_filtro_estatistica(container);
     }
 
     function criarCardRanking(emoji, titulo, jogador, corClasse = "primary") {
