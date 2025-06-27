@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok) {
                 throw new Error('Erro na requisição: ' + response.status);
             }
-
             const dados = await response.json();
             console.log(dados); // ou qualquer manipulação que deseje fazer com os dados
             return dados;
