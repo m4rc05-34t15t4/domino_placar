@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     //$JOGADORES = {};
     $JOGADORES_ESTATISTICAS = {};
+    $JOGADORES_ESTATISTICAS_EXPEDIENTE = {};
+    $JOGADORES_ESTATISTICAS_FORA_EXPEDIENTE = {};
     $JOG_ESTATISTICAS_TOTAIS = {
         "partidas" : { "titulo" : "🎮 Partidas", "dados" : [[0, 0, null]], "total" : 0 },
         "vitorias" : { "titulo" : "🏆 Vitórias", "dados" : [[0, 0, null]], "total" : 0 },
@@ -402,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
         //popula_duplas_estatisticas_totais(container);
     }
 
-    function popularCardsJogadores(jog_estatisticas){
+    function popularCardsJogadores(jog_estatisticas, $filtro="almoço"){
         
         //Prepara e ordena por pontos decrescente
         Object.entries(jog_estatisticas).forEach(([id_j, v_j]) => { jog_estatisticas[id_j].pontos = calcular_pontos({...v_j}); });
@@ -446,6 +448,52 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         popula_jog_estatisticas_totais(container);
+
+        criar_select_filtro_estatistica(container, $filtro);
+    }
+
+    function criar_select_filtro_estatistica(container, val="almoço"){
+        
+        // Cria o elemento <select> com Bootstrap
+        const selectForm = document.createElement("select");
+        selectForm.className = "form-select bg-primary text-white mx-3 my-1 text-center";
+        selectForm.id = "select_filtro_estatistica";
+
+        // Cria e adiciona manualmente as opções
+        const option1 = document.createElement("option");
+        option1.value = "almoço";
+        option1.textContent = "Almoço";
+        selectForm.appendChild(option1);
+
+        const option2 = document.createElement("option");
+        option2.value = "fora_expediente";
+        option2.textContent = "Fora do Expediente";
+        selectForm.appendChild(option2);
+
+        const option3 = document.createElement("option");
+        option3.value = "all";
+        option3.textContent = "Geral";
+        selectForm.appendChild(option3);
+
+        container.prepend(selectForm);
+
+        $("#select_filtro_estatistica").val(val);
+
+        // Adiciona o evento após inserir no DOM
+        selectForm.addEventListener("change", function () {
+            const valor = this.value;
+            switch (valor) {
+                case "almoço":
+                    popularCardsJogadores($JOGADORES_ESTATISTICAS_EXPEDIENTE, "almoço");
+                    break;
+                case "fora_expediente":
+                    popularCardsJogadores($JOGADORES_ESTATISTICAS_FORA_EXPEDIENTE, "fora_expediente");
+                    break;
+                case "all":
+                    popularCardsJogadores($JOGADORES_ESTATISTICAS, "all");
+                    break;
+            }
+        });
     }
 
     function popularCardsPartidas(partidas, jogadores) {
@@ -742,8 +790,10 @@ document.addEventListener('DOMContentLoaded', function() {
             $('#container-partidas').removeClass('d-none').addClass('d-flex fade-in');
         }
         if (dados && dados.data && dados.data.get_jogadores_estatistica_sinuca) {
-            $JOGADORES_ESTATISTICAS = dados.data.get_jogadores_estatistica_sinuca;
-            popularCardsJogadores($JOGADORES_ESTATISTICAS);
+            if(dados.data.get_jogadores_estatistica_sinuca) $JOGADORES_ESTATISTICAS = dados.data.get_jogadores_estatistica_sinuca;
+            if(dados.data.get_jogadores_estatistica_sinuca_expediente) $JOGADORES_ESTATISTICAS_EXPEDIENTE = dados.data.get_jogadores_estatistica_sinuca_expediente;
+            if(dados.data.get_jogadores_estatistica_sinuca_fora_expediente) $JOGADORES_ESTATISTICAS_FORA_EXPEDIENTE = dados.data.get_jogadores_estatistica_sinuca_fora_expediente;
+            popularCardsJogadores($JOGADORES_ESTATISTICAS_EXPEDIENTE, "almoço");
         }
         if (dados && dados.data && dados.data.get_rivais_estatistica_sinuca) {
             //$RIVAIS_ESTATISTICAS = dados.data.get_rivais_estatistica_sinuca;

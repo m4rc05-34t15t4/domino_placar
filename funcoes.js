@@ -249,6 +249,35 @@ function prazo_time(dataTexto, prazo_min = 10) {
     return diferencaMs <= MinutosMs;
 }
 
+function criar_select_filtro_estatistica(container, val="almoço"){
+        
+    // Cria o elemento <select> com Bootstrap
+    const selectForm = document.createElement("select");
+    selectForm.className = "form-select bg-primary text-white mx-3 my-1 text-center";
+    selectForm.id = "select_filtro_estatistica";
+
+    // Cria e adiciona manualmente as opções
+    const option1 = document.createElement("option");
+    option1.value = "almoço";
+    option1.textContent = "Almoço";
+    selectForm.appendChild(option1);
+
+    const option2 = document.createElement("option");
+    option2.value = "fora_expediente";
+    option2.textContent = "Fora do Expediente";
+    selectForm.appendChild(option2);
+
+    const option3 = document.createElement("option");
+    option3.value = "all";
+    option3.textContent = "Geral";
+    selectForm.appendChild(option3);
+
+    container.prepend(selectForm);
+
+    $("#select_filtro_estatistica").val(val);
+
+}
+
 //EVENTOS
 
 $('.img_merda').click(function(){
