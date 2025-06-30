@@ -1,5 +1,26 @@
 --30/06/2025
 
+--qery paa add com verificação
+$sql = "INSERT INTO partida (data_hora, jogador1_id, jogador2_id, jogador3_id, jogador4_id, placar1, placar2, jogadorbct, jogadas )
+                SELECT :dataHora, :j1, :j2, :j3, :j4, :placar1, :placar2, :bct, :jogadas
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM partida
+                    WHERE 
+                        ABS(EXTRACT(EPOCH FROM (data_hora - TIMESTAMP :dataHora))) <= 300
+                        AND jogadorbct = :bct
+                        AND (
+                        -- Combinação normal
+                        (jogador1_id = :j1 AND jogador2_id = :j2)
+                        OR (jogador1_id = :j2 AND jogador2_id = :j1)
+                        )
+                        AND (
+                        (jogador3_id = :j3 AND jogador4_id = :j4)
+                        OR (jogador3_id = :j4 AND jogador4_id = :j3)
+                        )
+                    )
+                RETURNING id;
+                ";
+
 CREATE OR REPLACE VIEW public.vw_jogador_estatistica_sinuca_ultimos_jogos AS
 WITH partidas_expandidas AS (
     SELECT id AS partida_id, data_hora, jogador1_id AS jogador_id

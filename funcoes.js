@@ -224,7 +224,7 @@ async function cadastrar_jogador(){
 }
 
 function administrador() {
-    return window.location.hash === "#aaa";
+    return window.location.hash === "#adm";
 }
 
 function PrazoEdicao(dataStr) {
@@ -242,7 +242,7 @@ function PrazoEdicao(dataStr) {
 
 function prazo_time(dataTexto, prazo_min = 10) {
     // Converte o texto para um objeto Date
-    const data = new Date(dataTexto.replace(" ", "T"));
+    const data = new Date(dataTexto);//dataTexto.replace(" ", "T")
     const agora = new Date();
     const diferencaMs = Math.abs(agora - data);
     const MinutosMs = prazo_min * 60 * 1000;

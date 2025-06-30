@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         if(parseInt(dados['id']) > 0) dados['acao'] = 'UPDATE';
         try {
-            if( ( (dados['acao'] == 'UPDATE' && administrador() ) || dados['acao'] != 'UPDATE' ) && validarDados(dados) ){
+            if( ( (dados['acao'] == 'UPDATE' && (administrador() || prazo_time(String($("#ModalPartida_titulo").html()).slice(4)))  ) || dados['acao'] != 'UPDATE' ) && validarDados(dados) ){
                 const response = await fetch("php/salvar_partida.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -835,7 +835,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $("#bt_submit").html("Salvar");
         $("#ModalPartida_titulo").html(`(${d.id}) ${d.data_hora.slice(0, 16)}`);
         
-        if( administrador() && PrazoEdicao(d.data_hora) ) {
+        if( PrazoEdicao(d.data_hora) ) {
             $("#bt-close-partida").fadeOut(0);
             $("#bt_excluir_partida").attr("id_partida", d.id);
             if(prazo_time(d.data_hora)) $("#bt_excluir_partida").fadeIn(0);
@@ -984,7 +984,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     $("#bt_excluir_partida").click(function(){
-        if(administrador()) {
+        if(administrador() || prazo_time(String($("#ModalPartida_titulo").html()).slice(4))) {
             $id = $(this).attr("id_partida");
             if (confirm(`Tem certeza que deseja remover partida de ID: ${$id} ?`)){
                 deletar_partida($id);
