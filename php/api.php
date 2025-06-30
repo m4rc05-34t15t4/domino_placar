@@ -38,10 +38,10 @@
     }
 
     //Lista Statistica Jogadores
-    function get_jogadores_estatistica($id_jogador="NULL OR NULL IS NULL", $order="partidas desc"){
+    function get_jogadores_estatistica($id_jogador="NULL OR NULL IS NULL", $order="partidas desc", $ult="_ultimos_jogos"){
         global $resultado;
         $sql = "SELECT *
-                FROM vw_jogador_estatistica 
+                FROM vw_jogador_estatistica$ult 
                 WHERE id = $id_jogador AND PARTIDAS > 0 
                 ORDER BY $order";
         $r = executeQuery($sql);
@@ -49,10 +49,10 @@
     }
     
     //com expediente
-    function get_jogadores_estatistica_expediente($id_jogador="NULL OR NULL IS NULL", $order="partidas desc"){
+    function get_jogadores_estatistica_expediente($id_jogador="NULL OR NULL IS NULL", $order="partidas desc", $ult="_ultimos_jogos"){
         global $resultado;
         $sql = "SELECT *
-                FROM vw_jogador_estatistica_expediente 
+                FROM vw_jogador_estatistica_expediente$ult 
                 WHERE id = $id_jogador AND PARTIDAS > 0 
                 ORDER BY $order";
         $r = executeQuery($sql);
@@ -60,10 +60,10 @@
     }
 
     //fora expediente
-    function get_jogadores_estatistica_fora_expediente($id_jogador="NULL OR NULL IS NULL", $order="partidas desc"){
+    function get_jogadores_estatistica_fora_expediente($id_jogador="NULL OR NULL IS NULL", $order="partidas desc", $ult="_ultimos_jogos"){
         global $resultado;
         $sql = "SELECT *
-                FROM vw_jogador_estatistica_fora_expediente 
+                FROM vw_jogador_estatistica_fora_expediente$ult 
                 WHERE id = $id_jogador AND PARTIDAS > 0 
                 ORDER BY $order";
         $r = executeQuery($sql);
@@ -71,10 +71,10 @@
     }
 
     //Lista Statistica Jogadores sinuca
-    function get_jogadores_estatistica_sinuca($id_jogador="NULL OR NULL IS NULL", $order="partidas_sinuca desc"){
+    function get_jogadores_estatistica_sinuca($id_jogador="NULL OR NULL IS NULL", $order="partidas_sinuca desc", $ult="_ultimos_jogos"){
         global $resultado;
         $sql = "SELECT *
-                FROM vw_jogador_estatistica_sinuca 
+                FROM vw_jogador_estatistica_sinuca$ult 
                 WHERE id = $id_jogador AND PARTIDAS_SINUCA > 0 
                 ORDER BY $order";
         $r = executeQuery($sql);
@@ -82,10 +82,10 @@
     }
 
     //Lista Statistica Jogadores sinuca expediente de jogo
-    function get_jogadores_estatistica_sinuca_expediente($id_jogador="NULL OR NULL IS NULL", $order="partidas_sinuca desc"){
+    function get_jogadores_estatistica_sinuca_expediente($id_jogador="NULL OR NULL IS NULL", $order="partidas_sinuca desc", $ult="_ultimos_jogos"){
         global $resultado;
         $sql = "SELECT *
-                FROM vw_jogador_estatistica_sinuca_expediente
+                FROM vw_jogador_estatistica_sinuca_expediente$ult 
                 WHERE id = $id_jogador AND PARTIDAS_SINUCA > 0 
                 ORDER BY $order";
         $r = executeQuery($sql);
@@ -93,10 +93,10 @@
     }
 
     //Lista Statistica Jogadores sinuca fora expediente
-    function get_jogadores_estatistica_sinuca_fora_expediente($id_jogador="NULL OR NULL IS NULL", $order="partidas_sinuca desc"){
+    function get_jogadores_estatistica_sinuca_fora_expediente($id_jogador="NULL OR NULL IS NULL", $order="partidas_sinuca desc", $ult="_ultimos_jogos"){
         global $resultado;
         $sql = "SELECT *
-                FROM vw_jogador_estatistica_sinuca_fora_expediente
+                FROM vw_jogador_estatistica_sinuca_fora_expediente$ult 
                 WHERE id = $id_jogador AND PARTIDAS_SINUCA > 0 
                 ORDER BY $order";
         $r = executeQuery($sql);
