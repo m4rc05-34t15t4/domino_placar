@@ -10,10 +10,10 @@
     }
 
     //Lista rank mensal dominó
-    function get_rank_mensal($exp="", $order="ano desc, mes desc"){
+    function get_rank_mensal($exp="", $jog="", $order="ano desc, mes desc"){
         global $resultado;
-        $sql = "SELECT * FROM public.vw_rank_mensal$exp ORDER BY $order;";
-        resultado_array(executeQuery($sql), 'get_rank_mensal'.$exp);
+        $sql = "SELECT * FROM public.vw_rank".$jog."_mensal$exp ORDER BY $order;";
+        resultado_array(executeQuery($sql), 'get_rank'.$jog.'_mensal'.$exp);
     }
 
     //Lista rank semanal domino
@@ -21,71 +21,6 @@
         global $resultado;
         $sql = "SELECT * FROM public.vw_rank_semanal;";
         resultado_array(executeQuery($sql), 'get_rank_semanal');
-    }
-
-    //Lista Statistica Duplas Jogadores
-    function get_duplas_estatistica($order="partidas DESC"){
-        global $resultado;
-        $sql = "SELECT *
-                FROM vw_dupla_estatistica 
-                WHERE PARTIDAS > 0 
-                ORDER BY $order";
-        resultado_array(executeQuery($sql), 'get_duplas_estatistica');
-    }
-
-    //Lista Statistica Rivais Jogadores Sinuca
-    function get_rivais_estatistica_sinuca($order="partidas DESC"){
-        global $resultado;
-        $sql = "SELECT *
-                FROM vw_comparacao_rivais_sinuca 
-                WHERE PARTIDAS > 0 
-                ORDER BY $order";
-        $r = executeQuery($sql);
-        resultado_array($r, 'get_rivais_estatistica_sinuca');
-    }
-
-    //Lista Statistica Jogadores
-    function get_jogadores_estatistica($exp="", $id_jogador="NULL OR NULL IS NULL", $order="partidas desc", $ult="_ultimos_jogos"){
-        global $resultado;
-        $sql = "SELECT *
-                FROM vw_jogador_estatistica$exp$ult 
-                WHERE id = $id_jogador AND PARTIDAS > 0 
-                ORDER BY $order";
-        $r = executeQuery($sql);
-        resultado_array($r, 'get_jogadores_estatistica'.$exp);
-    }
-
-    //Lista Statistica Jogadores sinuca
-    function get_jogadores_estatistica_sinuca($exp="", $id_jogador="NULL OR NULL IS NULL", $order="partidas_sinuca desc", $ult="_ultimos_jogos"){
-        global $resultado;
-        $sql = "SELECT *
-                FROM vw_jogador_estatistica_sinuca$exp$ult 
-                WHERE id = $id_jogador AND PARTIDAS_SINUCA > 0 
-                ORDER BY $order";
-        $r = executeQuery($sql);
-        resultado_array($r, 'get_jogadores_estatistica_sinuca'.$exp);
-    }
-
-    //Lista Statistica Jogadores sinuca expediente de jogo
-    function get_jogadores_estatistica_sinuca_expediente($id_jogador="NULL OR NULL IS NULL", $order="partidas_sinuca desc", $ult="_ultimos_jogos"){
-        global $resultado;
-        $sql = "SELECT *
-                FROM vw_jogador_estatistica_sinuca_expediente$ult 
-                WHERE id = $id_jogador AND PARTIDAS_SINUCA > 0 
-                ORDER BY $order";
-        $r = executeQuery($sql);
-        resultado_array($r, 'get_jogadores_estatistica_sinuca_expediente');
-    }
-
-    //Lista Statistica Jogadores sinuca fora expediente
-    function get_jogadores_estatistica_sinuca_fora_expediente($id_jogador="NULL OR NULL IS NULL", $order="partidas_sinuca desc", $ult="_ultimos_jogos"){
-        global $resultado;
-        $sql = "SELECT *
-                FROM vw_jogador_estatistica_sinuca_fora_expediente$ult 
-                WHERE id = $id_jogador AND PARTIDAS_SINUCA > 0 
-                ORDER BY $order";
-        $r = executeQuery($sql);
-        resultado_array($r, 'get_jogadores_estatistica_sinuca_fora_expediente');
     }
 
     //Lista jogadores
@@ -110,6 +45,49 @@
         resultado_array($r, 'get_partidas');
     }
 
+    //Lista Statistica Duplas Jogadores
+    function get_duplas_estatistica($order="partidas DESC"){
+        global $resultado;
+        $sql = "SELECT *
+                FROM vw_dupla_estatistica 
+                WHERE PARTIDAS > 0 
+                ORDER BY $order";
+        resultado_array(executeQuery($sql), 'get_duplas_estatistica');
+    }
+
+    //Lista Statistica Jogadores
+    function get_jogadores_estatistica($exp="", $id_jogador="NULL OR NULL IS NULL", $order="partidas desc", $ult="_ultimos_jogos"){
+        global $resultado;
+        $sql = "SELECT *
+                FROM vw_jogador_estatistica$exp$ult 
+                WHERE id = $id_jogador AND PARTIDAS > 0 
+                ORDER BY $order";
+        $r = executeQuery($sql);
+        resultado_array($r, 'get_jogadores_estatistica'.$exp);
+    }
+
+    //Lista Statistica Jogadores sinuca
+    function get_jogadores_estatistica_sinuca($exp="", $id_jogador="NULL OR NULL IS NULL", $order="qtd_partidas_utilizadas desc, vitorias DESC", $ult="_ultimos_jogos"){
+        global $resultado;
+        $sql = "SELECT *
+                FROM vw_jogador_estatistica_sinuca$exp$ult 
+                WHERE id = $id_jogador AND qtd_partidas_utilizadas > 0 
+                ORDER BY $order";
+        $r = executeQuery($sql);
+        resultado_array($r, 'get_jogadores_estatistica_sinuca'.$exp);
+    }
+
+     //Lista Statistica Rivais Jogadores Sinuca
+    function get_rivais_estatistica_sinuca($order="partidas DESC"){
+        global $resultado;
+        $sql = "SELECT *
+                FROM vw_comparacao_rivais_sinuca 
+                WHERE PARTIDAS > 0 
+                ORDER BY $order";
+        $r = executeQuery($sql);
+        resultado_array($r, 'get_rivais_estatistica_sinuca');
+    }
+
     //Lista partidas sinuca
     function get_partidas_sinuca($id_partida="NULL OR NULL IS NULL"){
         global $resultado;
@@ -131,8 +109,8 @@
         $opcao = isset($_POST['opcao']) ? $_POST['opcao'] : '';*/
     if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $opcao = isset($_GET['opcao']) ? $_GET['opcao'] : '';
-        if($opcao == "ALL") $opcao = ['get_jogadores', 'get_partidas', 'get_jogadores_estatistica', 'get_duplas_estatistica', 'get_rank_semanal', 'get_rank_mensal'];
-        elseif($opcao == "SINUCA") $opcao = ['get_jogadores', 'get_partidas_sinuca', 'get_jogadores_estatistica_sinuca', 'get_rivais_estatistica_sinuca'];
+        if($opcao == "ALL") $opcao = ['get_jogadores', 'get_partidas', 'get_jogadores_estatistica', 'get_duplas_estatistica', 'get_rank_mensal'];
+        elseif($opcao == "SINUCA") $opcao = ['get_jogadores', 'get_partidas_sinuca', 'get_jogadores_estatistica_sinuca', 'get_rivais_estatistica_sinuca', 'get_rank_sinuca_mensal'];
         if (!is_array($opcao) && strpos($opcao, ',') !== false) $opcao = explode(',', $opcao);
         elseif (!is_array($opcao)) $opcao = [$opcao];
         
@@ -168,6 +146,11 @@
                     get_jogadores_estatistica_sinuca();
                     get_jogadores_estatistica_sinuca('_expediente');
                     get_jogadores_estatistica_sinuca('_fora_expediente');
+                    break;
+                case 'get_rank_sinuca_mensal':
+                    get_rank_mensal("", "_sinuca");
+                    get_rank_mensal("_expediente", "_sinuca");
+                    get_rank_mensal("_fora_expediente", "_sinuca");
                     break;
                 case 'get_rivais_estatistica_sinuca':
                     get_rivais_estatistica_sinuca();

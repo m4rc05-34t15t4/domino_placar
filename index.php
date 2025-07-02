@@ -52,8 +52,6 @@
                         Ver Rank
                     </button>
 
-
-
                     <button id="ver_estatisticas" class="btn btn-danger d-flex align-items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-2" viewBox="0 0 24 24" aria-hidden="true">
                             <line x1="18" y1="20" x2="18" y2="10"></line>
@@ -99,7 +97,7 @@
             
             <div id="container-duplasjogadores" class="d-none div_cards-conteudo d-flex justify-content-center align-items-start flex-wrap w-fill h-fill"></div>
 
-            <div id="container-rank" class="d-none div_cards-conteudo d-flex justify-content-center align-items-start flex-wrap w-fill h-fill"></div>
+            <div id="container-rank" class="d-none div_cards-conteudo d-flex justify-content-center align-items-start flex-wrap w-fill h-fill pb-3"></div>
         
         </div>
 

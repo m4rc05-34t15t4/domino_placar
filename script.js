@@ -412,59 +412,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function popula_rank(rank){
-
-        const container = document.getElementById("container-rank");
-        container.innerHTML = "";
-
-        rank.forEach(r => {
-            const card = document.createElement("div");
-            card.className = "row border rounded shadow-sm p-3 bg-light";
-
-            card.innerHTML = `<h4 class="text-center mb-3">🏆 Ranking - ${r['mes']} / ${r['ano']}</h4>
-                <!-- Top Merda -->
-                <div class="col text-center">
-                    <picture>
-                        <source srcset="img/jogadores/${r['id_top_merda']}.gif" type="image/gif">
-                        <source srcset="img/jogadores/${r['id_top_merda']}.jpg" type="image/jpeg">
-                        <source srcset="img/avatar.png" type="image/png">
-                        <img src="img/avatar.png" alt="Top Merda" style="width: 80px; height: 100px; object-fit: cover;">
-                    </picture>
-                    <div class="fs-3 mt-2">💩</div>
-                    <div class="fw-bold">${r['nome_top_merda']}</div>
-                    <div class="text-muted">Merda: ${r['merda']}</div>
-                </div>
-
-                <!-- Top Mérito -->
-                <div class="col text-center">
-                    <picture>
-                        <source srcset="img/jogadores/${r['id_top_merito']}.gif" type="image/gif">
-                        <source srcset="img/jogadores/${r['id_top_merito']}.jpg" type="image/jpeg">
-                        <source srcset="img/avatar.png" type="image/png">
-                        <img src="img/avatar.png" alt="Top Meríto" style="width: 80px; height: 100px; object-fit: cover;">
-                    </picture>
-                    <div class="fs-3 mt-2">🏅</div>
-                    <div class="fw-bold">${r['nome_top_merito']}</div>
-                    <div class="text-muted">Mérito: ${r['merito']}</div>
-                </div>
-
-                <!-- Top Vitórias -->
-                <div class="col text-center">
-                    <picture>
-                        <source srcset="img/jogadores/${r['id_top_merito']}.gif" type="image/gif">
-                        <source srcset="img/jogadores/${r['id_top_merito']}.jpg" type="image/jpeg">
-                        <source srcset="img/avatar.png" type="image/png">
-                        <img src="img/avatar.png" alt="Top Vitórias" style="width: 80px; height: 100px; object-fit: cover;">
-                    </picture>
-                    <div class="fs-3 mt-2">🏆</div>
-                    <div class="fw-bold">Ana Campeã</div>
-                    <div class="text-muted">Vitórias: 12</div>
-                </div>`;
-
-            container.appendChild(card);
-        });
-    }
-
     function popularCardsPartidas(partidas, jogadores) {
         const container = document.getElementById("container-partidas"); // certifique-se de que existe uma div com esse id
         container.innerHTML = ""; // Limpa o conteúdo anterior
@@ -770,7 +717,7 @@ document.addEventListener('DOMContentLoaded', function() {
             popularCardsDuplasJogadores();
         }
         if (dados && dados.data && dados.data.get_rank_mensal) {
-            popula_rank(dados.data.get_rank_mensal);
+            popula_rank(dados.data.get_rank_mensal_expediente);
         }
     });
 

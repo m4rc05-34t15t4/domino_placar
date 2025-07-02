@@ -168,6 +168,17 @@ header {
     text-decoration: underline;
 }
 
+.img-rank{
+    min-width: 120px;
+    max-width: 120px;
+    min-height: 160px;
+    max-height: 160px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #ccc;
+}
+
 .fade-in {
     animation: fadeIn 0.5s ease-in-out forwards;
 }

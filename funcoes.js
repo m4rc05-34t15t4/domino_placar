@@ -1,5 +1,53 @@
 $JOGADORES = {};
 
+function nomeDoMes(numero) {
+  const meses = [
+    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+  ];
+
+  return meses[numero - 1] || '';
+}
+
+function primeiraMaiuscula(texto) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
+}
+
+function popula_rank(rank){
+
+    const container = document.getElementById("container-rank");
+    container.innerHTML = "";
+
+    rank.forEach(r => {
+        const card = document.createElement("div");
+        card.className = "m-3 row p-3 bg-light border rounded shadow";
+
+        card.innerHTML = `<h4 class="text-center">⭐ Ranking - ${primeiraMaiuscula(nomeDoMes(r['mes']))} ${r['ano']}</h4>
+            <!-- Top Vitórias -->
+            <div class="col text-center p-2 d-flex justify-content-center align-items-center flex-column">
+                <div class="fw-bold">${r['nome_top_vitorias']}</div>
+                <div class="img-rank rounded" style="background-image: url('img/jogadores/${r['id_top_vitorias']}.gif'), url('img/jogadores/${r['id_top_vitorias']}.jpg'), url('img/avatar.png');"></div>
+                <div class="fs-3 mt-2">🏆 ${r['vitorias']}</div>
+            </div>
+
+            <!-- Top Mérito -->
+            <div class="col text-center p-2 d-flex justify-content-center align-items-center flex-column">
+                <div class="fw-bold">${r['nome_top_merito']}</div>
+                <div class="img-rank rounded" style="background-image: url('img/jogadores/${r['id_top_merito']}.gif'), url('img/jogadores/${r['id_top_merito']}.jpg'), url('img/avatar.png');"></div>
+                <div class="fs-3 mt-2">🏅 ${r['merito']}</div>
+            </div>
+
+            <!-- Top Merda -->
+            <div class="col text-center p-2 d-flex justify-content-center align-items-center flex-column">
+                <div class="fw-bold">${r['nome_top_merda']}</div>
+                <div class="img-rank rounded" style="background-image: url('img/jogadores/${r['id_top_merda']}.gif'), url('img/jogadores/${r['id_top_merda']}.jpg'), url('img/avatar.png');"></div>
+                <div class="fs-3 mt-2">💩 ${r['merda']}</div>
+            </div>`;
+
+        container.appendChild(card);
+    });
+}
+
 async function editarJogador(idt) {
     const input = document.getElementById(`jogador-${idt}`);
     if (input.hasAttribute("readonly")) {
