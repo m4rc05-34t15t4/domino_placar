@@ -39,95 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /*async function editarJogador(idt) {
-        const input = document.getElementById(`jogador-${idt}`);
-        if (input.hasAttribute("readonly")) {
-            input.removeAttribute("readonly");
-            input.focus();
-        } else {
-            input.setAttribute("readonly", true);
-            
-            if (confirm(`Tem certeza que deseja atualizar o jogador "${$JOGADORES[idt]}"?`)) {
-
-                // Cria um objeto com os dados do formulário
-                var dados = {
-                    id: idt,
-                    acao: "UPDATE", 
-                    nome: input.value
-                };
-                if(validarNome(dados.nome)){
-                    try {
-                        const response = await fetch("php/salvar_jogador.php", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(dados)
-                        });
-
-                        if (!response.ok) {
-                            throw new Error("Erro ao salvar os dados");
-                        }
-
-                        const resultado = await response.json();
-                        console.log(dados.acao, resultado);
-                        
-                        if( resultado["resultado"]["success"] && resultado["resultado"]["data"][0]["id"] ){
-                            alert("Sucesso na solicitação!");
-                            $JOGADORES[idt] = dados.nome;
-                            renderizarListaJogadores();
-                        }
-                        else throw new Error("Houve algum erro!");
-                    } catch (erro) {
-                        console.error(erro);
-                        alert("Erro ao atualizar a jogador.");
-                    }
-                }
-            }
-            const novoNome = input.value.trim();
-            const jogador = $JOGADORES[idt];
-            if (jogador) jogador.nome = novoNome;
-        }
-    }
-
-    async function excluirJogador(idt) {
-        if (confirm(`Tem certeza que deseja remover o jogador "${$JOGADORES[idt]}"?`)) {
-            if (idt !== -1) {
-                
-                // Cria um objeto com os dados do formulário
-                var dados = {
-                    id: idt,
-                    acao: "DELETE", 
-                    nome: $JOGADORES[idt]
-                };
-                try {
-                    const response = await fetch("php/salvar_jogador.php", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(dados)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error("Erro ao salvar os dados");
-                    }
-
-                    const resultado = await response.json();
-                    console.log(dados.acao, resultado);
-                    
-                    if( resultado["resultado"]["success"] && resultado["resultado"]["data"][0]["id"] ){
-                        alert("Sucesso na solicitação!");
-                        delete $JOGADORES[idt];
-                        location.reload();
-                        //renderizarListaJogadores();
-                    }
-                    else throw new Error("Houve algum erro!");
-                } catch (erro) {
-                    console.error(erro);
-                    alert("Erro ao salvar a jogador.");
-                }
-
-            }
-        }
-    }*/
-
     function renderizarListaJogadores() {
         const container = document.getElementById("listaJogadores");
         container.innerHTML = "";
@@ -202,15 +113,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    /*function validarNome(nome) {
-        // Verifica se o nome é uma string não vazia e tem pelo menos 2 caracteres
-        if (typeof nome !== 'string' || nome.trim().length < 3) {
-            alert("Por favor, insira um nome válido com pelo menos 2 caracteres.");
-            return false;
-        }
-        return true;
-    }*/
-
     function validarDados(dados) {
         // Verifica se todos os jogadores foram selecionados (id > 0)
         const jogadores = [dados.jogador1, dados.jogador2, dados.jogador3, dados.jogador4];
@@ -234,25 +136,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
 
-        // Verifica se a data/hora foi preenchida
-        /*if (!dados.dataHora) {
-            alert("A data e hora da partida devem ser preenchidas.");
-            return false;
-        }*/
-
         return true;
     }
-
-    /*function formatarDataISO(dataISO) {
-        const [ano, mes, dia] = dataISO.split("-").map(Number);
-        const data = new Date(ano, mes - 1, dia); // forçando local time
-        const diaFormatado = String(data.getDate()).padStart(2, '0');
-        const mesFormatado = String(data.getMonth() + 1).padStart(2, '0');
-        const anoFormatado = data.getFullYear();
-        const dias = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
-        const diaSemana = dias[data.getDay()];
-        return `${diaFormatado}/${mesFormatado}/${anoFormatado} - ${diaSemana}`;
-    }*/
     
     function verificar_vencedor(partida){
         $vencedor = "";
@@ -527,6 +412,59 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function popula_rank(rank){
+
+        const container = document.getElementById("container-rank");
+        container.innerHTML = "";
+
+        rank.forEach(r => {
+            const card = document.createElement("div");
+            card.className = "row border rounded shadow-sm p-3 bg-light";
+
+            card.innerHTML = `<h4 class="text-center mb-3">🏆 Ranking - ${r['mes']} / ${r['ano']}</h4>
+                <!-- Top Merda -->
+                <div class="col text-center">
+                    <picture>
+                        <source srcset="img/jogadores/${r['id_top_merda']}.gif" type="image/gif">
+                        <source srcset="img/jogadores/${r['id_top_merda']}.jpg" type="image/jpeg">
+                        <source srcset="img/avatar.png" type="image/png">
+                        <img src="img/avatar.png" alt="Top Merda" style="width: 80px; height: 100px; object-fit: cover;">
+                    </picture>
+                    <div class="fs-3 mt-2">💩</div>
+                    <div class="fw-bold">${r['nome_top_merda']}</div>
+                    <div class="text-muted">Merda: ${r['merda']}</div>
+                </div>
+
+                <!-- Top Mérito -->
+                <div class="col text-center">
+                    <picture>
+                        <source srcset="img/jogadores/${r['id_top_merito']}.gif" type="image/gif">
+                        <source srcset="img/jogadores/${r['id_top_merito']}.jpg" type="image/jpeg">
+                        <source srcset="img/avatar.png" type="image/png">
+                        <img src="img/avatar.png" alt="Top Meríto" style="width: 80px; height: 100px; object-fit: cover;">
+                    </picture>
+                    <div class="fs-3 mt-2">🏅</div>
+                    <div class="fw-bold">${r['nome_top_merito']}</div>
+                    <div class="text-muted">Mérito: ${r['merito']}</div>
+                </div>
+
+                <!-- Top Vitórias -->
+                <div class="col text-center">
+                    <picture>
+                        <source srcset="img/jogadores/${r['id_top_merito']}.gif" type="image/gif">
+                        <source srcset="img/jogadores/${r['id_top_merito']}.jpg" type="image/jpeg">
+                        <source srcset="img/avatar.png" type="image/png">
+                        <img src="img/avatar.png" alt="Top Vitórias" style="width: 80px; height: 100px; object-fit: cover;">
+                    </picture>
+                    <div class="fs-3 mt-2">🏆</div>
+                    <div class="fw-bold">Ana Campeã</div>
+                    <div class="text-muted">Vitórias: 12</div>
+                </div>`;
+
+            container.appendChild(card);
+        });
+    }
+
     function popularCardsPartidas(partidas, jogadores) {
         const container = document.getElementById("container-partidas"); // certifique-se de que existe uma div com esse id
         container.innerHTML = ""; // Limpa o conteúdo anterior
@@ -654,50 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /*async function cadastrar_jogador(){
-        
-        // Cria um objeto com os dados do formulário
-        var dados = {
-            id: "new",
-            acao: "INSERT", 
-            nome: document.getElementById("jogador-new").value
-        };
-        if(dados['id'] != 'new' ) dados['acao'] = 'UPDATE';
-        try {
-            if(validarNome(dados['nome'])){
-                const response = await fetch("php/salvar_jogador.php", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(dados)
-                });
-
-                if (!response.ok) {
-                    throw new Error("Erro ao salvar os dados");
-                }
-
-                const resultado = await response.json();
-                console.log(dados.acao, resultado);
-                
-                if( resultado["resultado"]["success"] && resultado["resultado"]["data"][0]["id"] ){
-                    $JOGADORES[resultado["resultado"]["data"][0]["id"]] = dados.nome;
-                    alert("Sucesso na solicitação!");
-                    //renderizarListaJogadores();
-                    location.reload();
-                }
-                else throw new Error("Houve algum erro!");
-                
-            }
-        } catch (erro) {
-            console.error(erro);
-            alert("Erro ao salvar a jogador.");
-        }
-        
-    }*/
-
     async function cadastrar_partida(){
-
-        //$select_jbct = get_jogador_buceta_partida();
-        //$jbct = $select_jbct > 0 ? $(`#selectJogador${$select_jbct}`).val() : 0;
         
         // Cria um objeto com os dados do formulário
         var dados = {
@@ -739,10 +634,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /*function administrador() {
-        return window.location.hash === "#aaa";
-    }*/
-
     function aplicarSelecaoJogadas(texto) {
 
         if(texto != null && texto != "" && texto != undefined){
@@ -763,28 +654,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
       }
-
-    /*function PrazoEdicao(dataStr) {
-        const dataInformada = new Date(dataStr);
-        const agora = new Date();
-    
-        // Diferença em milissegundos
-        const diffMs = Math.abs(agora - dataInformada);
-        
-        // 1 dia em milissegundos
-        const umDiaMs = 24 * 60 * 60 * 1000;
-    
-        return diffMs <= umDiaMs;
-    }
-
-    function prazo_time(dataTexto, prazo_min = 10) {
-        // Converte o texto para um objeto Date
-        const data = new Date(dataTexto.replace(" ", "T"));
-        const agora = new Date();
-        const diferencaMs = Math.abs(agora - data);
-        const MinutosMs = prazo_min * 60 * 1000;
-        return diferencaMs <= MinutosMs;
-    }*/
 
     function preencherFormularioPartida(valores) {
 
@@ -900,10 +769,13 @@ document.addEventListener('DOMContentLoaded', function() {
             prepara_dupla_estatisticas(dados.data.get_duplas_estatistica);
             popularCardsDuplasJogadores();
         }
+        if (dados && dados.data && dados.data.get_rank_mensal) {
+            popula_rank(dados.data.get_rank_mensal);
+        }
     });
 
     function sumir_conteudo_div(div_aparecer){
-        $('#container-partidas, #container-jogadores, #container-duplasjogadores').removeClass('d-flex').addClass('d-none fade-in');
+        $('#container-partidas, #container-jogadores, #container-duplasjogadores, #container-rank').removeClass('d-flex').addClass('d-none fade-in');
         $(div_aparecer).removeClass('d-none').addClass('d-flex fade-in');
     }
 
@@ -921,14 +793,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    /*$('.img_merda').click(function(){
-        if ($(this).attr('src').includes('merda-fill.png')) $(this).attr('src', 'img/merda.png');
-        else {
-            $('.img_merda').attr('src', 'img/merda.png');
-            $(this).attr('src', 'img/merda-fill.png');
-        }
-    });*/
-
     document.getElementById("formPartida").addEventListener("submit", async function(e) {
         e.preventDefault(); // Impede o envio tradicional
         cadastrar_partida();
@@ -944,6 +808,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     $("#ver_partidas").click(function(){
         sumir_conteudo_div('#container-partidas');
+    });
+
+    $("#ver_rank").click(function(){
+        sumir_conteudo_div('#container-rank');
     });
 
     $("#add_jogadores").click(function(){

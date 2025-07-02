@@ -9,7 +9,14 @@
         return $filtro;
     }
 
-    //Lista Statistica Duplas Jogadores
+    //Lista rank mensal dominó
+    function get_rank_mensal($exp="", $order="ano desc, mes desc"){
+        global $resultado;
+        $sql = "SELECT * FROM public.vw_rank_mensal$exp ORDER BY $order;";
+        resultado_array(executeQuery($sql), 'get_rank_mensal'.$exp);
+    }
+
+    //Lista rank semanal domino
     function get_rank_semanal(){
         global $resultado;
         $sql = "SELECT * FROM public.vw_rank_semanal;";
@@ -38,47 +45,25 @@
     }
 
     //Lista Statistica Jogadores
-    function get_jogadores_estatistica($id_jogador="NULL OR NULL IS NULL", $order="partidas desc", $ult="_ultimos_jogos"){
+    function get_jogadores_estatistica($exp="", $id_jogador="NULL OR NULL IS NULL", $order="partidas desc", $ult="_ultimos_jogos"){
         global $resultado;
         $sql = "SELECT *
-                FROM vw_jogador_estatistica$ult 
+                FROM vw_jogador_estatistica$exp$ult 
                 WHERE id = $id_jogador AND PARTIDAS > 0 
                 ORDER BY $order";
         $r = executeQuery($sql);
-        resultado_array($r, 'get_jogadores_estatistica');
-    }
-    
-    //com expediente
-    function get_jogadores_estatistica_expediente($id_jogador="NULL OR NULL IS NULL", $order="partidas desc", $ult="_ultimos_jogos"){
-        global $resultado;
-        $sql = "SELECT *
-                FROM vw_jogador_estatistica_expediente$ult 
-                WHERE id = $id_jogador AND PARTIDAS > 0 
-                ORDER BY $order";
-        $r = executeQuery($sql);
-        resultado_array($r, 'get_jogadores_estatistica_expediente');
-    }
-
-    //fora expediente
-    function get_jogadores_estatistica_fora_expediente($id_jogador="NULL OR NULL IS NULL", $order="partidas desc", $ult="_ultimos_jogos"){
-        global $resultado;
-        $sql = "SELECT *
-                FROM vw_jogador_estatistica_fora_expediente$ult 
-                WHERE id = $id_jogador AND PARTIDAS > 0 
-                ORDER BY $order";
-        $r = executeQuery($sql);
-        resultado_array($r, 'get_jogadores_estatistica_fora_expediente');
+        resultado_array($r, 'get_jogadores_estatistica'.$exp);
     }
 
     //Lista Statistica Jogadores sinuca
-    function get_jogadores_estatistica_sinuca($id_jogador="NULL OR NULL IS NULL", $order="partidas_sinuca desc", $ult="_ultimos_jogos"){
+    function get_jogadores_estatistica_sinuca($exp="", $id_jogador="NULL OR NULL IS NULL", $order="partidas_sinuca desc", $ult="_ultimos_jogos"){
         global $resultado;
         $sql = "SELECT *
-                FROM vw_jogador_estatistica_sinuca$ult 
+                FROM vw_jogador_estatistica_sinuca$exp$ult 
                 WHERE id = $id_jogador AND PARTIDAS_SINUCA > 0 
                 ORDER BY $order";
         $r = executeQuery($sql);
-        resultado_array($r, 'get_jogadores_estatistica_sinuca');
+        resultado_array($r, 'get_jogadores_estatistica_sinuca'.$exp);
     }
 
     //Lista Statistica Jogadores sinuca expediente de jogo
@@ -120,7 +105,7 @@
         $sql = "SELECT *
                 FROM partida
                 WHERE id = $id_partida
-                ORDER BY id DESC, data_hora DESC;";
+                ORDER BY id DESC, data_hora DESC LIMIT 150;";
         $r = executeQuery($sql);
         resultado_array($r, 'get_partidas');
     }
@@ -131,7 +116,7 @@
         $sql = "SELECT *
                 FROM partida_sinuca
                 WHERE id = $id_partida
-                ORDER BY id DESC, data_hora DESC;";
+                ORDER BY id DESC, data_hora DESC LIMIT 150;";
         $r = executeQuery($sql);
         resultado_array($r, 'get_partidas_sinuca');
     }
@@ -146,8 +131,8 @@
         $opcao = isset($_POST['opcao']) ? $_POST['opcao'] : '';*/
     if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $opcao = isset($_GET['opcao']) ? $_GET['opcao'] : '';
-        if($opcao == "ALL") $opcao = ['get_jogadores', 'get_partidas', 'get_jogadores_estatistica', 'get_duplas_estatistica', 'get_rank_semanal', 'get_jogadores_estatistica_fora_expediente', 'get_jogadores_estatistica_expediente'];
-        elseif($opcao == "SINUCA") $opcao = ['get_jogadores', 'get_partidas_sinuca', 'get_jogadores_estatistica_sinuca', 'get_rivais_estatistica_sinuca', 'get_jogadores_estatistica_sinuca_expediente', 'get_jogadores_estatistica_sinuca_fora_expediente'];
+        if($opcao == "ALL") $opcao = ['get_jogadores', 'get_partidas', 'get_jogadores_estatistica', 'get_duplas_estatistica', 'get_rank_semanal', 'get_rank_mensal'];
+        elseif($opcao == "SINUCA") $opcao = ['get_jogadores', 'get_partidas_sinuca', 'get_jogadores_estatistica_sinuca', 'get_rivais_estatistica_sinuca'];
         if (!is_array($opcao) && strpos($opcao, ',') !== false) $opcao = explode(',', $opcao);
         elseif (!is_array($opcao)) $opcao = [$opcao];
         
@@ -162,33 +147,30 @@
                     break;
                 case 'get_jogadores_estatistica':
                     get_jogadores_estatistica();
-                    break;
-                case 'get_jogadores_estatistica_expediente':
-                    get_jogadores_estatistica_expediente();
-                    break;
-                case 'get_jogadores_estatistica_fora_expediente':
-                    get_jogadores_estatistica_fora_expediente();
+                    get_jogadores_estatistica("_expediente");
+                    get_jogadores_estatistica("_fora_expediente");
                     break;
                 case 'get_duplas_estatistica':
                     get_duplas_estatistica();
+                    break;
+                case 'get_rank_semanal':
+                    get_rank_semanal();
+                    break;
+                case 'get_rank_mensal':
+                    get_rank_mensal("");
+                    get_rank_mensal("_expediente");
+                    get_rank_mensal("_fora_expediente");
                     break;
                 case 'get_partidas_sinuca':
                     get_partidas_sinuca();
                     break;
                 case 'get_jogadores_estatistica_sinuca':
                     get_jogadores_estatistica_sinuca();
-                    break;
-                case 'get_jogadores_estatistica_sinuca_expediente':
-                    get_jogadores_estatistica_sinuca_expediente();
-                    break;
-                case 'get_jogadores_estatistica_sinuca_fora_expediente':
-                    get_jogadores_estatistica_sinuca_fora_expediente();
+                    get_jogadores_estatistica_sinuca('_expediente');
+                    get_jogadores_estatistica_sinuca('_fora_expediente');
                     break;
                 case 'get_rivais_estatistica_sinuca':
                     get_rivais_estatistica_sinuca();
-                    break;
-                case 'get_rank_semanal':
-                    get_rank_semanal();
                     break;
             }
         }

@@ -7,6 +7,7 @@
         <title>Dominó - Placar</title>
         <link rel="stylesheet" href="styles.css?v=<?=$v;?>">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </head>
@@ -43,6 +44,15 @@
                         </svg>
                         Partidas
                     </button>
+
+                    <button id="ver_rank" class="btn btn-orange d-flex align-items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-trophy-fill " viewBox="0 0 16 16">
+                            <path d="M2.5.5A.5.5 0 0 0 2 1v2a2.5 2.5 0 0 0 1.44 2.258 5.985 5.985 0 0 0 1.193 1.523A5.972 5.972 0 0 0 7.5 8.938V10H5.5a.5.5 0 0 0-.5.5v.5a3 3 0 0 0 2.5 2.958V15H5a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H9v-1.042A3 3 0 0 0 11.5 11v-.5a.5.5 0 0 0-.5-.5H8.5V8.938a5.972 5.972 0 0 0 2.867-1.157 5.985 5.985 0 0 0 1.193-1.523A2.5 2.5 0 0 0 14 3V1a.5.5 0 0 0-.5-.5H12a.5.5 0 0 0 0 1h1.5v2a1.5 1.5 0 0 1-1.24 1.48 5.98 5.98 0 0 0 .015-.48V1a.5.5 0 0 0-.5-.5H4.225a.5.5 0 0 0-.5.5v3.5c0 .163.005.325.015.484A1.5 1.5 0 0 1 2.5 3V1A.5.5 0 0 0 2.5.5Z"/>
+                        </svg>
+                        Ver Rank
+                    </button>
+
+
 
                     <button id="ver_estatisticas" class="btn btn-danger d-flex align-items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-2" viewBox="0 0 24 24" aria-hidden="true">
@@ -89,7 +99,7 @@
             
             <div id="container-duplasjogadores" class="d-none div_cards-conteudo d-flex justify-content-center align-items-start flex-wrap w-fill h-fill"></div>
 
-            <div id="container-rankSemanal" class="d-none div_cards-conteudo d-flex justify-content-center align-items-start flex-wrap w-fill h-fill"></div>
+            <div id="container-rank" class="d-none div_cards-conteudo d-flex justify-content-center align-items-start flex-wrap w-fill h-fill"></div>
         
         </div>
 

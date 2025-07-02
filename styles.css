@@ -121,6 +121,11 @@ header {
     min-width: 100px;
 }
 
+.btn-orange {
+    background-color: #fd7e14 !important;
+    color: white;
+}
+
 .card-usuario {
     border: 1px solid #ccc;
     border-radius: 0.5rem;
