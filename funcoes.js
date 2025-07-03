@@ -26,7 +26,7 @@ function popula_rank(rank){
             <!-- Top Vitórias -->
             <div class="col text-center p-2 d-flex justify-content-center align-items-center flex-column">
                 <div class="fw-bold">${r['nome_top_vitorias']}</div>
-                <div class="img-rank rounded" style="background-image: url('img/jogadores/${r['id_top_vitorias']}.gif'), url('img/jogadores/${r['id_top_vitorias']}.jpg'), url('img/avatar.png');"></div>
+                <div class="img-rank rounded" style="background-image: url('img/jogadores/${r['id_top_vitoria']}.gif'), url('img/jogadores/${r['id_top_vitorias']}.jpg'), url('img/avatar.png');"></div>
                 <div class="fs-3 mt-2">🏆 ${r['vitorias']}</div>
             </div>
 
