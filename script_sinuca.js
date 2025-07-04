@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const cardst = document.createElement("div");
         cardst.className = "cards-jogadores-estatisticas flex-grow-1 flex-wrap w-100 justify-content-center align-items-center";
         $divs_titulos_estatisticas = "";
-        for (const [key, valores] of Object.entries($JOG_ESTATISTICAS_TOTAIS)) $divs_titulos_estatisticas += $JOG_ESTATISTICAS_TOTAIS[key]['texto'] != '--' ? `<div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center "><strong>${$JOG_ESTATISTICAS_TOTAIS[key]['titulo']} (${$JOG_ESTATISTICAS_TOTAIS[key]['total']})</strong>${$JOG_ESTATISTICAS_TOTAIS[key]['texto']}</div>` : '';
+        for (const [key, valores] of Object.entries($JOG_ESTATISTICAS_TOTAIS)) $divs_titulos_estatisticas += ($JOG_ESTATISTICAS_TOTAIS[key]['titulo'] != undefined && $JOG_ESTATISTICAS_TOTAIS[key]['texto'] != '--') ? `<div class="card card-totais shadow-sm m-1 p-2 d-flex flex-column justify-content-start align-items-center "><strong>${$JOG_ESTATISTICAS_TOTAIS[key]['titulo']} (${$JOG_ESTATISTICAS_TOTAIS[key]['total']})</strong>${$JOG_ESTATISTICAS_TOTAIS[key]['texto']}</div>` : '';
         cardst.innerHTML = `<div class="d-flex flex-rown flex-wrap justify-content-center align-items-stretch w-100">${$divs_titulos_estatisticas}</div>`;
         container.prepend(cardst);
     }
