@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     $JOGADORES_ESTATISTICAS_EXPEDIENTE = {};
     $JOGADORES_ESTATISTICAS_FORA_EXPEDIENTE = {};
     $JOG_ESTATISTICAS_TOTAIS = {
-        "partidas" : { "titulo" : "🎮 Partidas", "dados" : [[0, 0, null]], "total" : 0 },
+        /*"partidas" : { "titulo" : "🎮 Partidas", "dados" : [[0, 0, null]], "total" : 0 },*/
         "vitorias" : { "titulo" : "🏆 Vitórias", "dados" : [[0, 0, null]], "total" : 0 },
         "derrotas" : { "titulo" : "💀 Derrotas", "dados" : [[0, 0, null]], "total" : 0 },
         "placar_vitoria" : { "titulo" : "⚽ Placar Vitória", "dados" : [[0, 0, null]], "total" : 0 },

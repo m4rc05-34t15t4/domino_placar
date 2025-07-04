@@ -48,7 +48,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-trophy-fill " viewBox="0 0 16 16">
                             <path d="M2.5.5A.5.5 0 0 0 2 1v2a2.5 2.5 0 0 0 1.44 2.258 5.985 5.985 0 0 0 1.193 1.523A5.972 5.972 0 0 0 7.5 8.938V10H5.5a.5.5 0 0 0-.5.5v.5a3 3 0 0 0 2.5 2.958V15H5a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H9v-1.042A3 3 0 0 0 11.5 11v-.5a.5.5 0 0 0-.5-.5H8.5V8.938a5.972 5.972 0 0 0 2.867-1.157 5.985 5.985 0 0 0 1.193-1.523A2.5 2.5 0 0 0 14 3V1a.5.5 0 0 0-.5-.5H12a.5.5 0 0 0 0 1h1.5v2a1.5 1.5 0 0 1-1.24 1.48 5.98 5.98 0 0 0 .015-.48V1a.5.5 0 0 0-.5-.5H4.225a.5.5 0 0 0-.5.5v3.5c0 .163.005.325.015.484A1.5 1.5 0 0 1 2.5 3V1A.5.5 0 0 0 2.5.5Z"/>
                         </svg>
-                        Ver Rank
+                        Ranking
                     </button>
 
                     <button id="ver_estatisticas" class="btn btn-danger d-flex align-items-center gap-1">

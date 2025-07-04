@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     $JOGADORES_ESTATISTICAS_EXPEDIENTE = {};
     $JOGADORES_ESTATISTICAS_FORA_EXPEDIENTE = {};
     $JOG_ESTATISTICAS_TOTAIS = {
-        "partidas" : { "titulo" : "🎮 Partidas", "dados" : [[0, 0, null]], "total" : 0 },
+        /*"partidas" : { "titulo" : "🎮 Partidas", "dados" : [[0, 0, null]], "total" : 0 },*/
         "vitorias" : { "titulo" : "🏆 Vitórias", "dados" : [[0, 0, null]], "total" : 0 },
         "derrotas" : { "titulo" : "💀 Derrotas", "dados" : [[0, 0, null]], "total" : 0 },
         "placar_vitoria" : { "titulo" : "⚽ Placar Vitória", "dados" : [[0, 0, null]], "total" : 0 },
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <hr class="my-1">
                         <div class="row">
                             <div class="col-6">
-                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>🎮 Partidas: </span><strong>${jog.partidas_sinuca}</strong></div>
+                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>🎮 Partidas: </span><strong>${jog.qtd_partidas_utilizadas}</strong></div>
                                 <div class="d-flex flex-rown justify-content-between align-items-center"><span>🏆 Vitórias: </span><strong>${jog.vitorias}</strong></div>
                                 <div class="d-flex flex-rown justify-content-between align-items-center"><span>💀 Derrotas: </span><strong>${jog.derrotas}</strong></div>
                                 <div class="d-flex flex-rown justify-content-between align-items-center"><span>🤝 Empates: </span><strong>${jog.empates}</strong></div>
@@ -577,7 +577,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function sumir_conteudo_div(div_aparecer){
-        $('#container-partidas, #container-jogadores, #container-rivaisjogadores').removeClass('d-flex').addClass('d-none fade-in');
+        $('#container-partidas, #container-jogadores, #container-rivaisjogadores, #container-rank').removeClass('d-flex').addClass('d-none fade-in');
         $(div_aparecer).removeClass('d-none').addClass('d-flex fade-in');
     }
 
