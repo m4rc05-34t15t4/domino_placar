@@ -343,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             $placar = `${partida.placar1} x ${partida.placar2}`;
             $v_cencedor = verificar_vencedor(partida);
-            $medalha = ( ($v_cencedor == "A" && partida.placar2 == 0) || ($v_cencedor == "B" && partida.placar1 == 0) ) ? "medalha" : "vitoria";
+            $medalha = ( ($v_cencedor == "A" && partida.placar2 == 0 && partida.placar1 >= 4) || ($v_cencedor == "B" && partida.placar1 == 0 && partida.placar2 >= 4) ) ? "medalha" : "vitoria";
             if($v_cencedor == "A") $placar = `<div class="${$medalha}"></div>${$placar}<div class="derrota"></div>`;
             else if($v_cencedor == "B") $placar = `<div class="derrota"></div>${$placar}<div class="${$medalha}"></div>`;
             
