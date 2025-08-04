@@ -540,6 +540,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function cadastrar_partida(){
+
+        $("#bt_submit").attr("disabled", true);
+        $("#bt_submit").html('Cadastrando...');
+        
         
         // Cria um objeto com os dados do formulário
         var dados = {
