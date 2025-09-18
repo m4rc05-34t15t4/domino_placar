@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     $JOGADORES_ESTATISTICAS = {};
     $JOGADORES_ESTATISTICAS_EXPEDIENTE = {};
     $JOGADORES_ESTATISTICAS_FORA_EXPEDIENTE = {};
+    $JOGADORES_ESTATISTICAS_RANK = {};
     $JOG_ESTATISTICAS_TOTAIS = {
         /*"partidas" : { "titulo" : "🎮 Partidas", "dados" : [[0, 0, null]], "total" : 0 },*/
         "vitorias" : { "titulo" : "🏆 Vitórias", "dados" : [[0, 0, null]], "total" : 0 },
@@ -292,6 +293,16 @@ document.addEventListener('DOMContentLoaded', function() {
         option3.textContent = "Geral";
         selectForm.appendChild(option3);
 
+        if(verificar_estatista_rank_valor()){
+            if(val == "Rank") val = "almoço";
+        }
+        else {
+            const option4 = document.createElement("option");
+            option4.value = "Rank";
+            option4.textContent = "Rank";
+            selectForm.appendChild(option4);
+        }
+
         container.prepend(selectForm);
 
         $("#select_filtro_estatistica").val(val);
@@ -308,6 +319,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     break;
                 case "all":
                     popularCardsJogadores($JOGADORES_ESTATISTICAS, "all");
+                    break;
+                case "Rank":
+                    popularCardsJogadores($JOGADORES_ESTATISTICAS_RANK, "Rank");
                     break;
             }
         });
@@ -531,6 +545,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return $id_jbct;
     }
 
+    function verificar_estatista_rank_valor(){
+        return Object.keys($JOGADORES_ESTATISTICAS_RANK).length == 0
+    }
+
     function prepara_rivais_estatisticas(rivais_estatistica){
         rivais_estatistica.forEach(rivais => {
             const [id_a, id_b] = String(rivais.id_rival).split(",");
@@ -566,7 +584,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if(dados.data.get_jogadores_estatistica_sinuca) $JOGADORES_ESTATISTICAS = dados.data.get_jogadores_estatistica_sinuca;
             if(dados.data.get_jogadores_estatistica_sinuca_expediente) $JOGADORES_ESTATISTICAS_EXPEDIENTE = dados.data.get_jogadores_estatistica_sinuca_expediente;
             if(dados.data.get_jogadores_estatistica_sinuca_fora_expediente) $JOGADORES_ESTATISTICAS_FORA_EXPEDIENTE = dados.data.get_jogadores_estatistica_sinuca_fora_expediente;
-            popularCardsJogadores($JOGADORES_ESTATISTICAS_EXPEDIENTE, "almoço");
+            if(dados.data.get_jogadores_estatistica_sinuca_rank) $JOGADORES_ESTATISTICAS_RANK = dados.data.get_jogadores_estatistica_sinuca_rank;
+            
+            if(verificar_estatista_rank_valor()) popularCardsJogadores($JOGADORES_ESTATISTICAS_EXPEDIENTE, "almoço");
+            else popularCardsJogadores($JOGADORES_ESTATISTICAS_RANK, "Rank");
         }
         if (dados && dados.data && dados.data.get_rivais_estatistica_sinuca) {
             //$RIVAIS_ESTATISTICAS = dados.data.get_rivais_estatistica_sinuca;

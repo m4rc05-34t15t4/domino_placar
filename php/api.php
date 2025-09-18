@@ -127,7 +127,7 @@
                     get_jogadores_estatistica();
                     get_jogadores_estatistica("_expediente");
                     get_jogadores_estatistica("_fora_expediente");
-                    get_jogadores_estatistica($exp="", $id_jogador="NULL OR NULL IS NULL", $order="vitorias DESC", $ult="_rank");
+                    get_jogadores_estatistica($exp="_rank", $id_jogador="NULL OR NULL IS NULL", $order="vitorias DESC", $ult="");
                     break;
                 case 'get_duplas_estatistica':
                     get_duplas_estatistica();
@@ -147,7 +147,7 @@
                     get_jogadores_estatistica_sinuca();
                     get_jogadores_estatistica_sinuca('_expediente');
                     get_jogadores_estatistica_sinuca('_fora_expediente');
-                    get_jogadores_estatistica_sinuca($exp="", $id_jogador="NULL OR NULL IS NULL", $order="vitorias DESC", $ult="_rank");
+                    get_jogadores_estatistica_sinuca($exp="_rank", $id_jogador="NULL OR NULL IS NULL", $order="vitorias DESC", $ult="");
                     break;
                 case 'get_rank_sinuca_mensal':
                     get_rank_mensal("", "_sinuca");
