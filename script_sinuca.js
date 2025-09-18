@@ -223,6 +223,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function popularCardsJogadores(jog_estatisticas, $filtro="almoço"){
+
+        $JOG_ESTATISTICAS_TOTAIS = {
+            /*"partidas" : { "titulo" : "🎮 Partidas", "dados" : [[0, 0, null]], "total" : 0 },*/
+            "vitorias" : { "titulo" : "🏆 Vitórias", "dados" : [[0, 0, null]], "total" : 0 },
+            "derrotas" : { "titulo" : "💀 Derrotas", "dados" : [[0, 0, null]], "total" : 0 },
+            "placar_vitoria" : { "titulo" : "⚽ Placar Vitória", "dados" : [[0, 0, null]], "total" : 0 },
+            "placar_derrota" : { "titulo" : "😞 Placar Derrota", "dados" : [[0, 0, null]], "total" : 0 },
+            "empates" : { "titulo" : "🤝 Empates", "dados" : [[0, 0, null]], "total" : 0 },
+            "merda" : { "titulo" : "💩 Merdas", "dados" : [[0, 0, null]], "total" : 0 },
+            "merito" : { "titulo" : "🎯 Méritos", "dados" : [[0, 0, null]], "total" : 0 },
+            "pontos" : { "titulo" : "📊 Pontos", "dados" : [[0, 0, null]], "total" : 0 }
+        };
         
         //Prepara e ordena por pontos decrescente
         Object.entries(jog_estatisticas).forEach(([id_j, v_j]) => { jog_estatisticas[id_j].pontos = calcular_pontos({...v_j}); });
