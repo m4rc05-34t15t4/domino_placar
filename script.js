@@ -5,19 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     $JOGADORES_ESTATISTICAS_EXPEDIENTE = {};
     $JOGADORES_ESTATISTICAS_FORA_EXPEDIENTE = {};
     $JOGADORES_ESTATISTICAS_RANK = {};
-    $JOG_ESTATISTICAS_TOTAIS = {
-        /*"partidas" : { "titulo" : "🎮 Partidas", "dados" : [[0, 0, null]], "total" : 0 },*/
-        "vitorias" : { "titulo" : "🏆 Vitórias", "dados" : [[0, 0, null]], "total" : 0 },
-        "derrotas" : { "titulo" : "💀 Derrotas", "dados" : [[0, 0, null]], "total" : 0 },
-        "placar_vitoria" : { "titulo" : "⚽ Placar Vitória", "dados" : [[0, 0, null]], "total" : 0 },
-        "placar_derrota" : { "titulo" : "😞 Placar Derrota", "dados" : [[0, 0, null]], "total" : 0 },
-        "empates" : { "titulo" : "🤝 Empates", "dados" : [[0, 0, null]], "total" : 0 },
-        "merda" : { "titulo" : "💩 Merdas", "dados" : [[0, 0, null]], "total" : 0 },
-        "merito" : { "titulo" : "🎯 Méritos", "dados" : [[0, 0, null]], "total" : 0 },
-        "laelo" : { "titulo" : "🔀 Lá e Lô", "dados" : [[0, 0, null]], "total" : 0 },
-        "cruzada" : { "titulo" : "⚔️ Cruzada", "dados" : [[0, 0, null]], "total" : 0 },
-        "pontos" : { "titulo" : "📊 Pontos", "dados" : [[0, 0, null]], "total" : 0 }
-    };
+    $JOG_ESTATISTICAS_TOTAIS = {};
     $DUPLAS_ESTATISTICAS = {};
     $DUPLAS_ESTATISTICAS_TOTAIS = {};
     $PARTIDAS = [];
@@ -286,10 +274,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const container = document.getElementById("container-jogadores");
         container.innerHTML = "";
 
+        $JOG_ESTATISTICAS_TOTAIS = {
+            /*"partidas" : { "titulo" : "🎮 Partidas", "dados" : [[0, 0, null]], "total" : 0 },*/
+            "vitorias" : { "titulo" : "🏆 Vitórias", "dados" : [[0, 0, null]], "total" : 0 },
+            "derrotas" : { "titulo" : "💀 Derrotas", "dados" : [[0, 0, null]], "total" : 0 },
+            "placar_vitoria" : { "titulo" : "⚽ Placar Vitória", "dados" : [[0, 0, null]], "total" : 0 },
+            "placar_derrota" : { "titulo" : "😞 Placar Derrota", "dados" : [[0, 0, null]], "total" : 0 },
+            "empates" : { "titulo" : "🤝 Empates", "dados" : [[0, 0, null]], "total" : 0 },
+            "merda" : { "titulo" : "💩 Merdas", "dados" : [[0, 0, null]], "total" : 0 },
+            "merito" : { "titulo" : "🎯 Méritos", "dados" : [[0, 0, null]], "total" : 0 },
+            "laelo" : { "titulo" : "🔀 Lá e Lô", "dados" : [[0, 0, null]], "total" : 0 },
+            "cruzada" : { "titulo" : "⚔️ Cruzada", "dados" : [[0, 0, null]], "total" : 0 },
+            "pontos" : { "titulo" : "📊 Pontos", "dados" : [[0, 0, null]], "total" : 0 }
+        };
+
         Object.entries(resultadoOrdenado).forEach(([id_j, jog]) => {
             const card = document.createElement("div");
             card.className = "cards-jogadores card shadow-sm m-2 p-2";
             //jog.pontos = calcular_pontos(jog);
+
             verificar_jogadores_estatisticas_totais(jog);
             $id = jog.id.replace(/^j/, '');
             card.innerHTML = `
@@ -306,8 +309,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="d-flex flex-rown justify-content-between align-items-center"><span>🎮 Partidas: </span><strong>${jog.partidas}</strong></div>
                                 <div class="d-flex flex-rown justify-content-between align-items-center"><span>🏆 Vitórias: </span><strong>${jog.vitorias}</strong></div>
                                 <div class="d-flex flex-rown justify-content-between align-items-center"><span>💀 Derrotas: </span><strong>${jog.derrotas}</strong></div>
-                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>⚽ Placar Vit.: </span><strong>${jog.placar_vitoria}</strong></div>
-                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>😞 Placar Der.: </span><strong>${jog.placar_derrota}</strong></div>
+                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>⚽ Pl. Vit.: </span><strong>${jog.placar_vitoria}</strong></div>
+                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>😞 Pl. Der.: </span><strong>${jog.placar_derrota}</strong></div>
                             </div>
                             <div class="col-6" style="border-left: 1px solid rgba(0, 0, 0, 0.3);">
                                 <div class="d-flex flex-rown justify-content-between align-items-center"><span>🤝 Empates: </span><strong>${jog.empates}</strong></div>
