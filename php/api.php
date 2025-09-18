@@ -109,8 +109,8 @@
         $opcao = isset($_POST['opcao']) ? $_POST['opcao'] : '';*/
     if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $opcao = isset($_GET['opcao']) ? $_GET['opcao'] : '';
-        if($opcao == "ALL") $opcao = ['get_jogadores', 'get_partidas', 'get_jogadores_estatistica', 'get_duplas_estatistica', 'get_rank_mensal'];
-        elseif($opcao == "SINUCA") $opcao = ['get_jogadores', 'get_partidas_sinuca', 'get_jogadores_estatistica_sinuca', 'get_rivais_estatistica_sinuca', 'get_rank_sinuca_mensal'];
+        if($opcao == "all" OR $opcao == "ALL") $opcao = ['get_jogadores', 'get_partidas', 'get_jogadores_estatistica', 'get_duplas_estatistica', 'get_rank_mensal'];
+        elseif($opcao == "SINUCA" OR $opcao == "sinuca") $opcao = ['get_jogadores', 'get_partidas_sinuca', 'get_jogadores_estatistica_sinuca', 'get_rivais_estatistica_sinuca', 'get_rank_sinuca_mensal'];
         if (!is_array($opcao) && strpos($opcao, ',') !== false) $opcao = explode(',', $opcao);
         elseif (!is_array($opcao)) $opcao = [$opcao];
         
@@ -127,6 +127,7 @@
                     get_jogadores_estatistica();
                     get_jogadores_estatistica("_expediente");
                     get_jogadores_estatistica("_fora_expediente");
+                    get_jogadores_estatistica($exp="", $id_jogador="NULL OR NULL IS NULL", $order="vitorias DESC", $ult="_rank");
                     break;
                 case 'get_duplas_estatistica':
                     get_duplas_estatistica();
@@ -146,6 +147,7 @@
                     get_jogadores_estatistica_sinuca();
                     get_jogadores_estatistica_sinuca('_expediente');
                     get_jogadores_estatistica_sinuca('_fora_expediente');
+                    get_jogadores_estatistica_sinuca($exp="", $id_jogador="NULL OR NULL IS NULL", $order="vitorias DESC", $ult="_rank");
                     break;
                 case 'get_rank_sinuca_mensal':
                     get_rank_mensal("", "_sinuca");

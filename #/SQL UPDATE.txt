@@ -1,3 +1,210 @@
+--18/09/2025
+
+
+CREATE OR REPLACE VIEW public.vw_jogador_estatistica_sinuca_rank
+ AS
+ WITH partidas_expandidas AS (
+         SELECT vw_partida_sinuca_com_vencedor.id AS partida_id,
+            vw_partida_sinuca_com_vencedor.data_hora,
+            vw_partida_sinuca_com_vencedor.jogador1_id AS jogador_id
+           FROM vw_partida_sinuca_com_vencedor
+          WHERE vw_partida_sinuca_com_vencedor.data_hora::time without time zone >= '12:00:00'::time without time zone AND vw_partida_sinuca_com_vencedor.data_hora::time without time zone <= '13:10:00'::time without time zone
+        UNION ALL
+         SELECT vw_partida_sinuca_com_vencedor.id,
+            vw_partida_sinuca_com_vencedor.data_hora,
+            vw_partida_sinuca_com_vencedor.jogador2_id
+           FROM vw_partida_sinuca_com_vencedor
+          WHERE vw_partida_sinuca_com_vencedor.data_hora::time without time zone >= '12:00:00'::time without time zone AND vw_partida_sinuca_com_vencedor.data_hora::time without time zone <= '13:10:00'::time without time zone
+        ), ranked_participacoes AS (
+         SELECT partidas_expandidas.jogador_id,
+            partidas_expandidas.partida_id,
+            partidas_expandidas.data_hora,
+            row_number() OVER (PARTITION BY partidas_expandidas.jogador_id ORDER BY partidas_expandidas.data_hora DESC) AS rn
+           FROM partidas_expandidas
+        ), partidas_filtradas AS (
+         SELECT ranked_participacoes.jogador_id,
+            ranked_participacoes.partida_id
+           FROM ranked_participacoes
+          WHERE ranked_participacoes.data_hora >= date_trunc('month', CURRENT_DATE)
+        ), partidas_jogador_filtradas AS (
+         SELECT f.jogador_id AS jogador_id_base,
+            p_1.id,
+            p_1.data_hora,
+            p_1.jogador1_id,
+            p_1.jogador2_id,
+            p_1.placar1,
+            p_1.placar2,
+            p_1.jogadorbct,
+            p_1.vencedor
+           FROM partidas_filtradas f
+             JOIN vw_partida_sinuca_com_vencedor p_1 ON f.partida_id = p_1.id
+        )
+ SELECT j.id,
+    j.nome,
+    count(p.id) AS qtd_partidas_utilizadas,
+    sum(
+        CASE
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'A'::text THEN 1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'B'::text THEN 1
+            ELSE 0
+        END) AS vitorias,
+    sum(
+        CASE
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'B'::text THEN 1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'A'::text THEN 1
+            ELSE 0
+        END) AS derrotas,
+    sum(
+        CASE
+            WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.vencedor = 'AB'::text THEN 1
+            ELSE 0
+        END) AS empates,
+    sum(
+        CASE
+            WHEN p.jogadorbct IS NOT NULL AND (p.jogadorbct = 1 AND j.id = p.jogador1_id OR p.jogadorbct = 2 AND j.id = p.jogador2_id) THEN 1
+            ELSE 0
+        END) AS merda,
+    sum(
+        CASE
+            WHEN p.vencedor = 'A'::text AND p.placar2 = 0 AND p.jogador1_id = j.id OR p.vencedor = 'B'::text AND p.placar1 = 0 AND p.jogador2_id = j.id THEN 1
+            ELSE 0
+        END) AS merito,
+    sum(
+        CASE
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'A'::text THEN p.placar1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'B'::text THEN p.placar2
+            ELSE 0
+        END) AS placar_vitoria,
+    sum(
+        CASE
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'B'::text THEN p.placar1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'A'::text THEN p.placar2
+            ELSE 0
+        END) AS placar_derrota
+   FROM jogador j
+     JOIN partidas_jogador_filtradas p ON j.id = p.jogador_id_base
+  GROUP BY j.id, j.nome
+  ORDER BY (count(p.id)) DESC;
+
+
+
+
+CREATE OR REPLACE VIEW public.vw_jogador_estatistica_rank
+ AS
+ WITH partidas_expandidas AS (
+         SELECT vw_partida_com_vencedor.id AS partida_id,
+            vw_partida_com_vencedor.data_hora,
+            vw_partida_com_vencedor.jogador1_id AS jogador_id
+           FROM vw_partida_com_vencedor
+          WHERE vw_partida_com_vencedor.data_hora::time without time zone >= '12:00:00'::time without time zone AND vw_partida_com_vencedor.data_hora::time without time zone <= '13:10:00'::time without time zone
+        UNION ALL
+         SELECT vw_partida_com_vencedor.id,
+            vw_partida_com_vencedor.data_hora,
+            vw_partida_com_vencedor.jogador2_id
+           FROM vw_partida_com_vencedor
+          WHERE vw_partida_com_vencedor.data_hora::time without time zone >= '12:00:00'::time without time zone AND vw_partida_com_vencedor.data_hora::time without time zone <= '13:10:00'::time without time zone
+        UNION ALL
+         SELECT vw_partida_com_vencedor.id,
+            vw_partida_com_vencedor.data_hora,
+            vw_partida_com_vencedor.jogador3_id
+           FROM vw_partida_com_vencedor
+          WHERE vw_partida_com_vencedor.data_hora::time without time zone >= '12:00:00'::time without time zone AND vw_partida_com_vencedor.data_hora::time without time zone <= '13:10:00'::time without time zone
+        UNION ALL
+         SELECT vw_partida_com_vencedor.id,
+            vw_partida_com_vencedor.data_hora,
+            vw_partida_com_vencedor.jogador4_id
+           FROM vw_partida_com_vencedor
+          WHERE vw_partida_com_vencedor.data_hora::time without time zone >= '12:00:00'::time without time zone AND vw_partida_com_vencedor.data_hora::time without time zone <= '13:10:00'::time without time zone
+        ), ranked_participacoes AS (
+         SELECT partidas_expandidas.jogador_id,
+            partidas_expandidas.partida_id,
+            partidas_expandidas.data_hora,
+            row_number() OVER (PARTITION BY partidas_expandidas.jogador_id ORDER BY partidas_expandidas.data_hora DESC) AS rn
+           FROM partidas_expandidas
+        ), partidas_filtradas AS (
+         SELECT ranked_participacoes.jogador_id,
+            ranked_participacoes.partida_id
+           FROM ranked_participacoes
+			WHERE ranked_participacoes.data_hora >= date_trunc('month', CURRENT_DATE)
+        ), qtd_partidas_utilizadas AS (
+         SELECT partidas_filtradas.jogador_id,
+            count(*) AS qtd_partidas_utilizadas
+           FROM partidas_filtradas
+          GROUP BY partidas_filtradas.jogador_id
+        ), partidas_jogador_filtradas AS (
+         SELECT DISTINCT p_1.id,
+            p_1.data_hora,
+            p_1.jogador1_id,
+            p_1.jogador2_id,
+            p_1.jogador3_id,
+            p_1.jogador4_id,
+            p_1.placar1,
+            p_1.placar2,
+            p_1.jogadorbct,
+            p_1.jogadas,
+            p_1.dupla_vencedora
+           FROM vw_partida_com_vencedor p_1
+             JOIN partidas_filtradas pf_1 ON p_1.id = pf_1.partida_id
+        )
+ SELECT j.id,
+    j.nome,
+    count(*) AS partidas,
+    sum(
+        CASE
+            WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A'::text THEN 1
+            WHEN (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B'::text THEN 1
+            ELSE 0
+        END) AS vitorias,
+    sum(
+        CASE
+            WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'B'::text THEN 1
+            WHEN (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'A'::text THEN 1
+            ELSE 0
+        END) AS derrotas,
+    sum(
+        CASE
+            WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id OR j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'AB'::text THEN 1
+            ELSE 0
+        END) AS empates,
+    sum(
+        CASE
+            WHEN p.jogadorbct IS NOT NULL AND (p.jogadorbct = 1 AND j.id = p.jogador1_id OR p.jogadorbct = 2 AND j.id = p.jogador2_id OR p.jogadorbct = 3 AND j.id = p.jogador3_id OR p.jogadorbct = 4 AND j.id = p.jogador4_id) THEN 1
+            ELSE 0
+        END) AS merda,
+    sum(
+        CASE
+            WHEN ((j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A'::text OR (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B'::text) AND (p.jogadas ~~* '%C%'::text OR p.jogadas ~~* '%L%'::text) THEN 1
+            ELSE 0
+        END) AS merito,
+    sum(
+        CASE
+            WHEN ((j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A'::text OR (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B'::text) AND p.jogadas ~~* '%L%'::text THEN 1
+            ELSE 0
+        END) AS laelo,
+    sum(
+        CASE
+            WHEN ((j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A'::text OR (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B'::text) AND p.jogadas ~~* '%C%'::text THEN 1
+            ELSE 0
+        END) AS cruzada,
+    sum(
+        CASE
+            WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'A'::text THEN p.placar1
+            WHEN (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'B'::text THEN p.placar2
+            ELSE 0
+        END) AS placar_vitoria,
+    sum(
+        CASE
+            WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.dupla_vencedora = 'B'::text THEN p.placar1
+            WHEN (j.id = p.jogador3_id OR j.id = p.jogador4_id) AND p.dupla_vencedora = 'A'::text THEN p.placar2
+            ELSE 0
+        END) AS placar_derrota
+   FROM jogador j
+     JOIN partidas_filtradas pf ON j.id = pf.jogador_id
+     JOIN partidas_jogador_filtradas p ON pf.partida_id = p.id
+  GROUP BY j.id, j.nome
+  ORDER BY (count(*)) DESC;
+
+
 --20/07/2025
 
 -- DROP VIEW public.vw_jogador_estatistica_sinuca_fora_expediente;
