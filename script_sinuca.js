@@ -5,17 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     $JOGADORES_ESTATISTICAS_EXPEDIENTE = {};
     $JOGADORES_ESTATISTICAS_FORA_EXPEDIENTE = {};
     $JOGADORES_ESTATISTICAS_RANK = {};
-    $JOG_ESTATISTICAS_TOTAIS = {
-        /*"partidas" : { "titulo" : "🎮 Partidas", "dados" : [[0, 0, null]], "total" : 0 },*/
-        "vitorias" : { "titulo" : "🏆 Vitórias", "dados" : [[0, 0, null]], "total" : 0 },
-        "derrotas" : { "titulo" : "💀 Derrotas", "dados" : [[0, 0, null]], "total" : 0 },
-        "placar_vitoria" : { "titulo" : "⚽ Placar Vitória", "dados" : [[0, 0, null]], "total" : 0 },
-        "placar_derrota" : { "titulo" : "😞 Placar Derrota", "dados" : [[0, 0, null]], "total" : 0 },
-        "empates" : { "titulo" : "🤝 Empates", "dados" : [[0, 0, null]], "total" : 0 },
-        "merda" : { "titulo" : "💩 Merdas", "dados" : [[0, 0, null]], "total" : 0 },
-        "merito" : { "titulo" : "🎯 Méritos", "dados" : [[0, 0, null]], "total" : 0 },
-        "pontos" : { "titulo" : "📊 Pontos", "dados" : [[0, 0, null]], "total" : 0 }
-    };
+    $JOG_ESTATISTICAS_TOTAIS = {};
     $RIVAIS_ESTATISTICAS = {};
     $RIVAIS_ESTATISTICAS_TOTAIS = {};
     $PARTIDAS = [];
@@ -223,6 +213,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function popularCardsJogadores(jog_estatisticas, $filtro="almoço"){
+        
+        //Prepara e ordena por pontos decrescente
+        Object.entries(jog_estatisticas).forEach(([id_j, v_j]) => { jog_estatisticas[id_j].pontos = calcular_pontos({...v_j}); });
+        const jogadoresOrdenados = Object.entries(jog_estatisticas).sort(([, a], [, b]) => parseInt(b.pontos ?? 0) - parseInt(a.pontos ?? 0)); // Ordenar por pontos (decrescente)
+        const resultadoOrdenado = Object.assign( {}, ...jogadoresOrdenados.map(([id, v]) => ({ ['j' + String(id)]: v }))); // Recriar objeto com prefixo na chave (ex: j2, j4)
+        const container = document.getElementById("container-jogadores");
+        container.innerHTML = "";
 
         $JOG_ESTATISTICAS_TOTAIS = {
             /*"partidas" : { "titulo" : "🎮 Partidas", "dados" : [[0, 0, null]], "total" : 0 },*/
@@ -235,13 +232,6 @@ document.addEventListener('DOMContentLoaded', function() {
             "merito" : { "titulo" : "🎯 Méritos", "dados" : [[0, 0, null]], "total" : 0 },
             "pontos" : { "titulo" : "📊 Pontos", "dados" : [[0, 0, null]], "total" : 0 }
         };
-        
-        //Prepara e ordena por pontos decrescente
-        Object.entries(jog_estatisticas).forEach(([id_j, v_j]) => { jog_estatisticas[id_j].pontos = calcular_pontos({...v_j}); });
-        const jogadoresOrdenados = Object.entries(jog_estatisticas).sort(([, a], [, b]) => parseInt(b.pontos ?? 0) - parseInt(a.pontos ?? 0)); // Ordenar por pontos (decrescente)
-        const resultadoOrdenado = Object.assign( {}, ...jogadoresOrdenados.map(([id, v]) => ({ ['j' + String(id)]: v }))); // Recriar objeto com prefixo na chave (ex: j2, j4)
-        const container = document.getElementById("container-jogadores");
-        container.innerHTML = "";
 
         Object.entries(resultadoOrdenado).forEach(([id_j, jog]) => {
             const card = document.createElement("div");
@@ -266,8 +256,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="d-flex flex-rown justify-content-between align-items-center"><span>🤝 Empates: </span><strong>${jog.empates}</strong></div>
                             </div>
                             <div class="col-6" style="border-left: 1px solid rgba(0, 0, 0, 0.3);">
-                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>⚽ Placar Vit.: </span><strong>${jog.placar_vitoria}</strong></div>
-                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>😞 Placar Der.: </span><strong>${jog.placar_derrota}</strong></div>
+                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>⚽ Pl. Vit.: </span><strong>${jog.placar_vitoria}</strong></div>
+                                <div class="d-flex flex-rown justify-content-between align-items-center"><span>😞 Pl. Der.: </span><strong>${jog.placar_derrota}</strong></div>
                                 <div class="d-flex flex-rown justify-content-between align-items-center"><span>💩 Merdas: </span><strong>${jog.merda}</strong></div>
                                 <div class="d-flex flex-rown justify-content-between align-items-center"><span>🎯 Méritos: </span><strong>${jog.merito}</strong></div>
                             </div>
