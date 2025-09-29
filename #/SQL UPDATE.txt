@@ -1,3 +1,176 @@
+-- 29/09/2025
+
+CREATE OR REPLACE VIEW public.vw_jogador_estatistica_sinuca_rank
+ AS
+ WITH partidas_expandidas AS (
+         SELECT vw_partida_sinuca_com_vencedor.id AS partida_id,
+            vw_partida_sinuca_com_vencedor.data_hora,
+            vw_partida_sinuca_com_vencedor.jogador1_id AS jogador_id
+           FROM vw_partida_sinuca_com_vencedor
+          WHERE vw_partida_sinuca_com_vencedor.data_hora::time without time zone >= '12:00:00'::time without time zone AND vw_partida_sinuca_com_vencedor.data_hora::time without time zone <= '13:10:00'::time without time zone
+        UNION ALL
+         SELECT vw_partida_sinuca_com_vencedor.id,
+            vw_partida_sinuca_com_vencedor.data_hora,
+            vw_partida_sinuca_com_vencedor.jogador2_id
+           FROM vw_partida_sinuca_com_vencedor
+          WHERE vw_partida_sinuca_com_vencedor.data_hora::time without time zone >= '12:00:00'::time without time zone AND vw_partida_sinuca_com_vencedor.data_hora::time without time zone <= '13:10:00'::time without time zone
+        ), ranked_participacoes AS (
+         SELECT partidas_expandidas.jogador_id,
+            partidas_expandidas.partida_id,
+            partidas_expandidas.data_hora,
+            row_number() OVER (PARTITION BY partidas_expandidas.jogador_id ORDER BY partidas_expandidas.data_hora DESC) AS rn
+           FROM partidas_expandidas
+        ), partidas_filtradas AS (
+         SELECT ranked_participacoes.jogador_id,
+            ranked_participacoes.partida_id
+           FROM ranked_participacoes
+          WHERE ranked_participacoes.data_hora >= date_trunc('month'::text, 'now'::text::date::timestamp with time zone)
+        ), partidas_jogador_filtradas AS (
+         SELECT f.jogador_id AS jogador_id_base,
+            p_1.id,
+            p_1.data_hora,
+            p_1.jogador1_id,
+            p_1.jogador2_id,
+            p_1.placar1,
+            p_1.placar2,
+            p_1.jogadorbct,
+            p_1.vencedor
+           FROM partidas_filtradas f
+             JOIN vw_partida_sinuca_com_vencedor p_1 ON f.partida_id = p_1.id
+        )
+ SELECT j.id,
+    j.nome,
+    count(p.id) AS qtd_partidas_utilizadas,
+    sum(
+        CASE
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'A'::text THEN 1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'B'::text THEN 1
+            ELSE 0
+        END) AS vitorias,
+    sum(
+        CASE
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'B'::text THEN 1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'A'::text THEN 1
+            ELSE 0
+        END) AS derrotas,
+    sum(
+        CASE
+            WHEN (j.id = p.jogador1_id OR j.id = p.jogador2_id) AND p.vencedor = 'AB'::text THEN 1
+            ELSE 0
+        END) AS empates,
+    sum(
+        CASE
+            WHEN p.jogadorbct IS NOT NULL AND (p.jogadorbct = 1 AND j.id = p.jogador1_id OR p.jogadorbct = 2 AND j.id = p.jogador2_id) THEN 1
+            ELSE 0
+        END) AS merda,
+    sum(
+        CASE
+            WHEN (p.vencedor = 'A'::text AND p.placar2 = 0 AND p.placar1 >= 4 AND p.jogador1_id = j.id) OR (p.vencedor = 'B'::text AND p.placar1 = 0 AND p.placar2 >= 4 AND p.jogador2_id = j.id) THEN 1
+            ELSE 0
+        END) AS merito,
+    sum(
+        CASE
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'A'::text THEN p.placar1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'B'::text THEN p.placar2
+            ELSE 0
+        END) AS placar_vitoria,
+    sum(
+        CASE
+            WHEN j.id = p.jogador1_id AND p.vencedor = 'B'::text THEN p.placar1
+            WHEN j.id = p.jogador2_id AND p.vencedor = 'A'::text THEN p.placar2
+            ELSE 0
+        END) AS placar_derrota
+   FROM jogador j
+     JOIN partidas_jogador_filtradas p ON j.id = p.jogador_id_base
+  GROUP BY j.id, j.nome
+  ORDER BY (count(p.id)) DESC;
+
+
+
+
+
+CREATE OR REPLACE VIEW public.vw_rank_sinuca_mensal_expediente
+ AS
+ WITH estatistica_mensal AS (
+         SELECT j.id AS jogador_id,
+            j.nome,
+            date_part('month'::text, p.data_hora)::integer AS mes,
+            date_part('year'::text, p.data_hora)::integer AS ano,
+            count(
+                CASE
+                    WHEN j.id = p.jogador1_id AND p.vencedor = 'A'::text OR j.id = p.jogador2_id AND p.vencedor = 'B'::text THEN 1
+                    ELSE NULL::integer
+                END) AS vitorias,
+            sum(
+                CASE
+                    WHEN p.jogadorbct IS NOT NULL AND (p.jogadorbct = 1 AND j.id = p.jogador1_id OR p.jogadorbct = 2 AND j.id = p.jogador2_id) THEN 1
+                    ELSE 0
+                END) AS merda,
+            sum(
+         		CASE
+         			WHEN (p.vencedor = 'A'::text AND p.placar2 = 0 AND p.placar1 >= 4 AND p.jogador1_id = j.id) OR (p.vencedor = 'B'::text AND p.placar1 = 0 AND p.placar2 >= 4 AND p.jogador2_id = j.id) THEN 1
+            	 	ELSE 0
+                END)::integer AS merito
+           FROM jogador j
+             JOIN vw_partida_sinuca_com_vencedor p ON j.id = p.jogador1_id OR j.id = p.jogador2_id
+          WHERE p.data_hora IS NOT NULL AND to_char(p.data_hora, 'HH24:MI'::text) >= '12:00'::text AND to_char(p.data_hora, 'HH24:MI'::text) <= '13:10'::text
+          GROUP BY j.id, j.nome, (date_part('month'::text, p.data_hora)), (date_part('year'::text, p.data_hora))
+        ), ranking_por_mes AS (
+         SELECT em.jogador_id,
+            em.nome,
+            em.mes,
+            em.ano,
+            em.vitorias,
+            em.merda,
+            em.merito,
+            row_number() OVER (PARTITION BY em.ano, em.mes ORDER BY em.merda DESC, em.vitorias) AS rn_merda,
+            row_number() OVER (PARTITION BY em.ano, em.mes ORDER BY em.merito DESC, em.vitorias DESC) AS rn_merito,
+            row_number() OVER (PARTITION BY em.ano, em.mes ORDER BY em.vitorias DESC) AS rn_vitorias
+           FROM estatistica_mensal em
+        ), meses_com_partidas AS (
+         SELECT DISTINCT date_part('month'::text, vw_partida_sinuca_com_vencedor.data_hora)::integer AS mes,
+            date_part('year'::text, vw_partida_sinuca_com_vencedor.data_hora)::integer AS ano
+           FROM vw_partida_sinuca_com_vencedor
+          WHERE to_char(vw_partida_sinuca_com_vencedor.data_hora, 'HH24:MI'::text) >= '12:00'::text AND to_char(vw_partida_sinuca_com_vencedor.data_hora, 'HH24:MI'::text) <= '13:10'::text
+        ), meses_numerados AS (
+         SELECT meses_com_partidas.mes,
+            meses_com_partidas.ano,
+            row_number() OVER (ORDER BY meses_com_partidas.ano, meses_com_partidas.mes) AS id
+           FROM meses_com_partidas
+        ), top_mensal AS (
+         SELECT DISTINCT mn.id,
+            mn.mes,
+            mn.ano,
+            first_value(rm.jogador_id) OVER (PARTITION BY rm.ano, rm.mes ORDER BY rm.rn_merda) AS id_top_merda,
+            first_value(rm.nome) OVER (PARTITION BY rm.ano, rm.mes ORDER BY rm.rn_merda) AS nome_top_merda,
+            first_value(rm.merda) OVER (PARTITION BY rm.ano, rm.mes ORDER BY rm.rn_merda) AS merda,
+            first_value(rm.jogador_id) OVER (PARTITION BY rm.ano, rm.mes ORDER BY rm.rn_merito) AS id_top_merito,
+            first_value(rm.nome) OVER (PARTITION BY rm.ano, rm.mes ORDER BY rm.rn_merito) AS nome_top_merito,
+            first_value(rm.merito) OVER (PARTITION BY rm.ano, rm.mes ORDER BY rm.rn_merito) AS merito,
+            first_value(rm.jogador_id) OVER (PARTITION BY rm.ano, rm.mes ORDER BY rm.rn_vitorias) AS id_top_vitoria,
+            first_value(rm.nome) OVER (PARTITION BY rm.ano, rm.mes ORDER BY rm.rn_vitorias) AS nome_top_vitorias,
+            first_value(rm.vitorias) OVER (PARTITION BY rm.ano, rm.mes ORDER BY rm.rn_vitorias) AS vitorias
+           FROM ranking_por_mes rm
+             JOIN meses_numerados mn ON rm.mes = mn.mes AND rm.ano = mn.ano
+        )
+ SELECT top_mensal.id,
+    top_mensal.mes,
+    top_mensal.ano,
+    top_mensal.id_top_merda,
+    top_mensal.nome_top_merda,
+    top_mensal.merda,
+    top_mensal.id_top_merito,
+    top_mensal.nome_top_merito,
+    top_mensal.merito,
+    top_mensal.id_top_vitoria,
+    top_mensal.nome_top_vitorias,
+    top_mensal.vitorias
+   FROM top_mensal
+  ORDER BY top_mensal.ano DESC, top_mensal.mes DESC;
+
+
+
+
 --18/09/2025
 
 
