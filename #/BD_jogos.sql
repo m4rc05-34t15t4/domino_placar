@@ -862,6 +862,127 @@ CREATE VIEW public.vw_jogador_estatistica_fora_expediente_ultimos_jogos AS
 ALTER VIEW public.vw_jogador_estatistica_fora_expediente_ultimos_jogos OWNER TO postgres;
 
 --
+-- Name: vw_jogador_estatistica_rank; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.vw_jogador_estatistica_rank AS
+ WITH partidas_expandidas AS (
+         SELECT vw_partida_com_vencedor.id AS partida_id,
+            vw_partida_com_vencedor.data_hora,
+            vw_partida_com_vencedor.jogador1_id AS jogador_id
+           FROM public.vw_partida_com_vencedor
+          WHERE (((vw_partida_com_vencedor.data_hora)::time without time zone >= '12:00:00'::time without time zone) AND ((vw_partida_com_vencedor.data_hora)::time without time zone <= '13:10:00'::time without time zone))
+        UNION ALL
+         SELECT vw_partida_com_vencedor.id,
+            vw_partida_com_vencedor.data_hora,
+            vw_partida_com_vencedor.jogador2_id
+           FROM public.vw_partida_com_vencedor
+          WHERE (((vw_partida_com_vencedor.data_hora)::time without time zone >= '12:00:00'::time without time zone) AND ((vw_partida_com_vencedor.data_hora)::time without time zone <= '13:10:00'::time without time zone))
+        UNION ALL
+         SELECT vw_partida_com_vencedor.id,
+            vw_partida_com_vencedor.data_hora,
+            vw_partida_com_vencedor.jogador3_id
+           FROM public.vw_partida_com_vencedor
+          WHERE (((vw_partida_com_vencedor.data_hora)::time without time zone >= '12:00:00'::time without time zone) AND ((vw_partida_com_vencedor.data_hora)::time without time zone <= '13:10:00'::time without time zone))
+        UNION ALL
+         SELECT vw_partida_com_vencedor.id,
+            vw_partida_com_vencedor.data_hora,
+            vw_partida_com_vencedor.jogador4_id
+           FROM public.vw_partida_com_vencedor
+          WHERE (((vw_partida_com_vencedor.data_hora)::time without time zone >= '12:00:00'::time without time zone) AND ((vw_partida_com_vencedor.data_hora)::time without time zone <= '13:10:00'::time without time zone))
+        ), ranked_participacoes AS (
+         SELECT partidas_expandidas.jogador_id,
+            partidas_expandidas.partida_id,
+            partidas_expandidas.data_hora,
+            row_number() OVER (PARTITION BY partidas_expandidas.jogador_id ORDER BY partidas_expandidas.data_hora DESC) AS rn
+           FROM partidas_expandidas
+        ), partidas_filtradas AS (
+         SELECT ranked_participacoes.jogador_id,
+            ranked_participacoes.partida_id
+           FROM ranked_participacoes
+          WHERE (ranked_participacoes.data_hora >= date_trunc('month'::text, (CURRENT_DATE)::timestamp with time zone))
+        ), qtd_partidas_utilizadas AS (
+         SELECT partidas_filtradas.jogador_id,
+            count(*) AS qtd_partidas_utilizadas
+           FROM partidas_filtradas
+          GROUP BY partidas_filtradas.jogador_id
+        ), partidas_jogador_filtradas AS (
+         SELECT DISTINCT p_1.id,
+            p_1.data_hora,
+            p_1.jogador1_id,
+            p_1.jogador2_id,
+            p_1.jogador3_id,
+            p_1.jogador4_id,
+            p_1.placar1,
+            p_1.placar2,
+            p_1.jogadorbct,
+            p_1.jogadas,
+            p_1.dupla_vencedora
+           FROM (public.vw_partida_com_vencedor p_1
+             JOIN partidas_filtradas pf_1 ON ((p_1.id = pf_1.partida_id)))
+        )
+ SELECT j.id,
+    j.nome,
+    count(*) AS partidas,
+    sum(
+        CASE
+            WHEN (((j.id = p.jogador1_id) OR (j.id = p.jogador2_id)) AND (p.dupla_vencedora = 'A'::text)) THEN 1
+            WHEN (((j.id = p.jogador3_id) OR (j.id = p.jogador4_id)) AND (p.dupla_vencedora = 'B'::text)) THEN 1
+            ELSE 0
+        END) AS vitorias,
+    sum(
+        CASE
+            WHEN (((j.id = p.jogador1_id) OR (j.id = p.jogador2_id)) AND (p.dupla_vencedora = 'B'::text)) THEN 1
+            WHEN (((j.id = p.jogador3_id) OR (j.id = p.jogador4_id)) AND (p.dupla_vencedora = 'A'::text)) THEN 1
+            ELSE 0
+        END) AS derrotas,
+    sum(
+        CASE
+            WHEN (((j.id = p.jogador1_id) OR (j.id = p.jogador2_id) OR (j.id = p.jogador3_id) OR (j.id = p.jogador4_id)) AND (p.dupla_vencedora = 'AB'::text)) THEN 1
+            ELSE 0
+        END) AS empates,
+    sum(
+        CASE
+            WHEN ((p.jogadorbct IS NOT NULL) AND (((p.jogadorbct = 1) AND (j.id = p.jogador1_id)) OR ((p.jogadorbct = 2) AND (j.id = p.jogador2_id)) OR ((p.jogadorbct = 3) AND (j.id = p.jogador3_id)) OR ((p.jogadorbct = 4) AND (j.id = p.jogador4_id)))) THEN 1
+            ELSE 0
+        END) AS merda,
+    sum(
+        CASE
+            WHEN (((((j.id = p.jogador1_id) OR (j.id = p.jogador2_id)) AND (p.dupla_vencedora = 'A'::text)) OR (((j.id = p.jogador3_id) OR (j.id = p.jogador4_id)) AND (p.dupla_vencedora = 'B'::text))) AND ((p.jogadas ~~* '%C%'::text) OR (p.jogadas ~~* '%L%'::text))) THEN 1
+            ELSE 0
+        END) AS merito,
+    sum(
+        CASE
+            WHEN (((((j.id = p.jogador1_id) OR (j.id = p.jogador2_id)) AND (p.dupla_vencedora = 'A'::text)) OR (((j.id = p.jogador3_id) OR (j.id = p.jogador4_id)) AND (p.dupla_vencedora = 'B'::text))) AND (p.jogadas ~~* '%L%'::text)) THEN 1
+            ELSE 0
+        END) AS laelo,
+    sum(
+        CASE
+            WHEN (((((j.id = p.jogador1_id) OR (j.id = p.jogador2_id)) AND (p.dupla_vencedora = 'A'::text)) OR (((j.id = p.jogador3_id) OR (j.id = p.jogador4_id)) AND (p.dupla_vencedora = 'B'::text))) AND (p.jogadas ~~* '%C%'::text)) THEN 1
+            ELSE 0
+        END) AS cruzada,
+    sum(
+        CASE
+            WHEN (((j.id = p.jogador1_id) OR (j.id = p.jogador2_id)) AND (p.dupla_vencedora = 'A'::text)) THEN p.placar1
+            WHEN (((j.id = p.jogador3_id) OR (j.id = p.jogador4_id)) AND (p.dupla_vencedora = 'B'::text)) THEN p.placar2
+            ELSE 0
+        END) AS placar_vitoria,
+    sum(
+        CASE
+            WHEN (((j.id = p.jogador1_id) OR (j.id = p.jogador2_id)) AND (p.dupla_vencedora = 'B'::text)) THEN p.placar1
+            WHEN (((j.id = p.jogador3_id) OR (j.id = p.jogador4_id)) AND (p.dupla_vencedora = 'A'::text)) THEN p.placar2
+            ELSE 0
+        END) AS placar_derrota
+   FROM ((public.jogador j
+     JOIN partidas_filtradas pf ON ((j.id = pf.jogador_id)))
+     JOIN partidas_jogador_filtradas p ON ((pf.partida_id = p.id)))
+  GROUP BY j.id, j.nome
+  ORDER BY (count(*)) DESC;
+
+
+ALTER VIEW public.vw_jogador_estatistica_rank OWNER TO postgres;
+
+--
 -- Name: vw_jogador_estatistica_sinuca; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -1103,7 +1224,7 @@ CREATE VIEW public.vw_jogador_estatistica_sinuca_fora_expediente AS
         END) AS merda,
     sum(
         CASE
-            WHEN (((p.vencedor = 'A'::text) AND (p.placar2 = 0) AND (p.jogador1_id = j.id)) OR ((p.vencedor = 'B'::text) AND (p.placar1 = 0) AND (p.jogador2_id = j.id))) THEN 1
+            WHEN (((p.vencedor = 'A'::text) AND (p.placar2 = 0) AND (p.placar1 >= 4) AND (p.jogador1_id = j.id)) OR ((p.vencedor = 'B'::text) AND (p.placar1 = 0) AND (p.placar2 >= 4) AND (p.jogador2_id = j.id))) THEN 1
             ELSE 0
         END) AS merito,
     sum(
@@ -1203,7 +1324,7 @@ CREATE VIEW public.vw_jogador_estatistica_sinuca_fora_expediente_ultimos_jogos A
         END) AS merda,
     sum(
         CASE
-            WHEN (((p.vencedor = 'A'::text) AND (p.placar2 = 0) AND (p.jogador1_id = j.id)) OR ((p.vencedor = 'B'::text) AND (p.placar1 = 0) AND (p.jogador2_id = j.id))) THEN 1
+            WHEN (((p.vencedor = 'A'::text) AND (p.placar2 = 0) AND (p.placar1 >= 4) AND (p.jogador1_id = j.id)) OR ((p.vencedor = 'B'::text) AND (p.placar1 = 0) AND (p.placar2 >= 4) AND (p.jogador2_id = j.id))) THEN 1
             ELSE 0
         END) AS merito,
     sum(
@@ -1225,6 +1346,97 @@ CREATE VIEW public.vw_jogador_estatistica_sinuca_fora_expediente_ultimos_jogos A
 
 
 ALTER VIEW public.vw_jogador_estatistica_sinuca_fora_expediente_ultimos_jogos OWNER TO postgres;
+
+--
+-- Name: vw_jogador_estatistica_sinuca_rank; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.vw_jogador_estatistica_sinuca_rank AS
+ WITH partidas_expandidas AS (
+         SELECT vw_partida_sinuca_com_vencedor.id AS partida_id,
+            vw_partida_sinuca_com_vencedor.data_hora,
+            vw_partida_sinuca_com_vencedor.jogador1_id AS jogador_id
+           FROM public.vw_partida_sinuca_com_vencedor
+          WHERE (((vw_partida_sinuca_com_vencedor.data_hora)::time without time zone >= '12:00:00'::time without time zone) AND ((vw_partida_sinuca_com_vencedor.data_hora)::time without time zone <= '13:10:00'::time without time zone))
+        UNION ALL
+         SELECT vw_partida_sinuca_com_vencedor.id,
+            vw_partida_sinuca_com_vencedor.data_hora,
+            vw_partida_sinuca_com_vencedor.jogador2_id
+           FROM public.vw_partida_sinuca_com_vencedor
+          WHERE (((vw_partida_sinuca_com_vencedor.data_hora)::time without time zone >= '12:00:00'::time without time zone) AND ((vw_partida_sinuca_com_vencedor.data_hora)::time without time zone <= '13:10:00'::time without time zone))
+        ), ranked_participacoes AS (
+         SELECT partidas_expandidas.jogador_id,
+            partidas_expandidas.partida_id,
+            partidas_expandidas.data_hora,
+            row_number() OVER (PARTITION BY partidas_expandidas.jogador_id ORDER BY partidas_expandidas.data_hora DESC) AS rn
+           FROM partidas_expandidas
+        ), partidas_filtradas AS (
+         SELECT ranked_participacoes.jogador_id,
+            ranked_participacoes.partida_id
+           FROM ranked_participacoes
+          WHERE (ranked_participacoes.data_hora >= date_trunc('month'::text, (('now'::text)::date)::timestamp with time zone))
+        ), partidas_jogador_filtradas AS (
+         SELECT f.jogador_id AS jogador_id_base,
+            p_1.id,
+            p_1.data_hora,
+            p_1.jogador1_id,
+            p_1.jogador2_id,
+            p_1.placar1,
+            p_1.placar2,
+            p_1.jogadorbct,
+            p_1.vencedor
+           FROM (partidas_filtradas f
+             JOIN public.vw_partida_sinuca_com_vencedor p_1 ON ((f.partida_id = p_1.id)))
+        )
+ SELECT j.id,
+    j.nome,
+    count(p.id) AS qtd_partidas_utilizadas,
+    sum(
+        CASE
+            WHEN ((j.id = p.jogador1_id) AND (p.vencedor = 'A'::text)) THEN 1
+            WHEN ((j.id = p.jogador2_id) AND (p.vencedor = 'B'::text)) THEN 1
+            ELSE 0
+        END) AS vitorias,
+    sum(
+        CASE
+            WHEN ((j.id = p.jogador1_id) AND (p.vencedor = 'B'::text)) THEN 1
+            WHEN ((j.id = p.jogador2_id) AND (p.vencedor = 'A'::text)) THEN 1
+            ELSE 0
+        END) AS derrotas,
+    sum(
+        CASE
+            WHEN (((j.id = p.jogador1_id) OR (j.id = p.jogador2_id)) AND (p.vencedor = 'AB'::text)) THEN 1
+            ELSE 0
+        END) AS empates,
+    sum(
+        CASE
+            WHEN ((p.jogadorbct IS NOT NULL) AND (((p.jogadorbct = 1) AND (j.id = p.jogador1_id)) OR ((p.jogadorbct = 2) AND (j.id = p.jogador2_id)))) THEN 1
+            ELSE 0
+        END) AS merda,
+    sum(
+        CASE
+            WHEN (((p.vencedor = 'A'::text) AND (p.placar2 = 0) AND (p.placar1 >= 4) AND (p.jogador1_id = j.id)) OR ((p.vencedor = 'B'::text) AND (p.placar1 = 0) AND (p.placar2 >= 4) AND (p.jogador2_id = j.id))) THEN 1
+            ELSE 0
+        END) AS merito,
+    sum(
+        CASE
+            WHEN ((j.id = p.jogador1_id) AND (p.vencedor = 'A'::text)) THEN p.placar1
+            WHEN ((j.id = p.jogador2_id) AND (p.vencedor = 'B'::text)) THEN p.placar2
+            ELSE 0
+        END) AS placar_vitoria,
+    sum(
+        CASE
+            WHEN ((j.id = p.jogador1_id) AND (p.vencedor = 'B'::text)) THEN p.placar1
+            WHEN ((j.id = p.jogador2_id) AND (p.vencedor = 'A'::text)) THEN p.placar2
+            ELSE 0
+        END) AS placar_derrota
+   FROM (public.jogador j
+     JOIN partidas_jogador_filtradas p ON ((j.id = p.jogador_id_base)))
+  GROUP BY j.id, j.nome
+  ORDER BY (count(p.id)) DESC;
+
+
+ALTER VIEW public.vw_jogador_estatistica_sinuca_rank OWNER TO postgres;
 
 --
 -- Name: vw_jogador_estatistica_sinuca_ultimos_jogos; Type: VIEW; Schema: public; Owner: postgres
@@ -1292,7 +1504,7 @@ CREATE VIEW public.vw_jogador_estatistica_sinuca_ultimos_jogos AS
         END) AS merda,
     sum(
         CASE
-            WHEN (((p.vencedor = 'A'::text) AND (p.placar2 = 0) AND (p.jogador1_id = j.id)) OR ((p.vencedor = 'B'::text) AND (p.placar1 = 0) AND (p.jogador2_id = j.id))) THEN 1
+            WHEN (((p.vencedor = 'A'::text) AND (p.placar2 = 0) AND (p.placar1 >= 4) AND (p.jogador1_id = j.id)) OR ((p.vencedor = 'B'::text) AND (p.placar1 = 0) AND (p.placar2 >= 4) AND (p.jogador2_id = j.id))) THEN 1
             ELSE 0
         END) AS merito,
     sum(
@@ -1706,7 +1918,11 @@ CREATE VIEW public.vw_rank_sinuca_mensal AS
                     WHEN ((p.jogadorbct IS NOT NULL) AND (((p.jogadorbct = 1) AND (j.id = p.jogador1_id)) OR ((p.jogadorbct = 2) AND (j.id = p.jogador2_id)))) THEN 1
                     ELSE 0
                 END) AS merda,
-            0 AS merito
+            sum(
+                CASE
+                    WHEN (((j.id = p.jogador1_id) AND (p.vencedor = 'A'::text) AND (p.placar1 >= 4) AND (p.placar2 = 0)) OR ((j.id = p.jogador2_id) AND (p.vencedor = 'B'::text) AND (p.placar2 >= 4) AND (p.placar1 = 0))) THEN 1
+                    ELSE 0
+                END) AS merito
            FROM (public.jogador j
              JOIN public.vw_partida_sinuca_com_vencedor p ON (((j.id = p.jogador1_id) OR (j.id = p.jogador2_id))))
           WHERE (p.data_hora IS NOT NULL)
@@ -1774,8 +1990,8 @@ CREATE VIEW public.vw_rank_sinuca_mensal_expediente AS
  WITH estatistica_mensal AS (
          SELECT j.id AS jogador_id,
             j.nome,
-            (EXTRACT(month FROM p.data_hora))::integer AS mes,
-            (EXTRACT(year FROM p.data_hora))::integer AS ano,
+            (date_part('month'::text, p.data_hora))::integer AS mes,
+            (date_part('year'::text, p.data_hora))::integer AS ano,
             count(
                 CASE
                     WHEN (((j.id = p.jogador1_id) AND (p.vencedor = 'A'::text)) OR ((j.id = p.jogador2_id) AND (p.vencedor = 'B'::text))) THEN 1
@@ -1786,11 +2002,15 @@ CREATE VIEW public.vw_rank_sinuca_mensal_expediente AS
                     WHEN ((p.jogadorbct IS NOT NULL) AND (((p.jogadorbct = 1) AND (j.id = p.jogador1_id)) OR ((p.jogadorbct = 2) AND (j.id = p.jogador2_id)))) THEN 1
                     ELSE 0
                 END) AS merda,
-            0 AS merito
+            sum(
+                CASE
+                    WHEN (((p.vencedor = 'A'::text) AND (p.placar2 = 0) AND (p.placar1 >= 4) AND (p.jogador1_id = j.id)) OR ((p.vencedor = 'B'::text) AND (p.placar1 = 0) AND (p.placar2 >= 4) AND (p.jogador2_id = j.id))) THEN 1
+                    ELSE 0
+                END) AS merito
            FROM (public.jogador j
              JOIN public.vw_partida_sinuca_com_vencedor p ON (((j.id = p.jogador1_id) OR (j.id = p.jogador2_id))))
           WHERE ((p.data_hora IS NOT NULL) AND (to_char(p.data_hora, 'HH24:MI'::text) >= '12:00'::text) AND (to_char(p.data_hora, 'HH24:MI'::text) <= '13:10'::text))
-          GROUP BY j.id, j.nome, (EXTRACT(month FROM p.data_hora)), (EXTRACT(year FROM p.data_hora))
+          GROUP BY j.id, j.nome, (date_part('month'::text, p.data_hora)), (date_part('year'::text, p.data_hora))
         ), ranking_por_mes AS (
          SELECT em.jogador_id,
             em.nome,
@@ -1804,8 +2024,8 @@ CREATE VIEW public.vw_rank_sinuca_mensal_expediente AS
             row_number() OVER (PARTITION BY em.ano, em.mes ORDER BY em.vitorias DESC) AS rn_vitorias
            FROM estatistica_mensal em
         ), meses_com_partidas AS (
-         SELECT DISTINCT (EXTRACT(month FROM vw_partida_sinuca_com_vencedor.data_hora))::integer AS mes,
-            (EXTRACT(year FROM vw_partida_sinuca_com_vencedor.data_hora))::integer AS ano
+         SELECT DISTINCT (date_part('month'::text, vw_partida_sinuca_com_vencedor.data_hora))::integer AS mes,
+            (date_part('year'::text, vw_partida_sinuca_com_vencedor.data_hora))::integer AS ano
            FROM public.vw_partida_sinuca_com_vencedor
           WHERE ((to_char(vw_partida_sinuca_com_vencedor.data_hora, 'HH24:MI'::text) >= '12:00'::text) AND (to_char(vw_partida_sinuca_com_vencedor.data_hora, 'HH24:MI'::text) <= '13:10'::text))
         ), meses_numerados AS (
@@ -1867,7 +2087,11 @@ CREATE VIEW public.vw_rank_sinuca_mensal_fora_expediente AS
                     WHEN ((p.jogadorbct IS NOT NULL) AND (((p.jogadorbct = 1) AND (j.id = p.jogador1_id)) OR ((p.jogadorbct = 2) AND (j.id = p.jogador2_id)))) THEN 1
                     ELSE 0
                 END) AS merda,
-            0 AS merito
+            sum(
+                CASE
+                    WHEN (((j.id = p.jogador1_id) AND (p.vencedor = 'A'::text) AND (p.placar1 >= 4) AND (p.placar2 = 0)) OR ((j.id = p.jogador2_id) AND (p.vencedor = 'B'::text) AND (p.placar2 >= 4) AND (p.placar1 = 0))) THEN 1
+                    ELSE 0
+                END) AS merito
            FROM (public.jogador j
              JOIN public.vw_partida_sinuca_com_vencedor p ON (((j.id = p.jogador1_id) OR (j.id = p.jogador2_id))))
           WHERE ((p.data_hora IS NOT NULL) AND ((to_char(p.data_hora, 'HH24:MI'::text) < '12:00'::text) OR (to_char(p.data_hora, 'HH24:MI'::text) > '13:10'::text)))
@@ -1962,6 +2186,18 @@ COPY public.jogador (id, nome) FROM stdin;
 7	Arruda
 2	Rômulo (tuty)
 32	Da Silva
+33	Ten Campos JR
+34	Albuquerque
+35	Garcia
+36	Magno
+37	Charles Pipico
+38	Firmino
+39	Henrique 
+40	Belém 
+41	Belém 
+42	Guaxi Thiago ramos
+43	Campos Júnior
+44	Nilo
 \.
 
 
@@ -2252,6 +2488,1323 @@ COPY public.partida (id, data_hora, jogador1_id, jogador2_id, jogador3_id, jogad
 529	2025-07-01 12:56:00	1	32	10	27	0	1	1	\N
 530	2025-07-01 12:58:00	6	11	8	14	3	1	\N	\N
 531	2025-07-01 12:59:00	1	4	10	27	0	4	\N	C
+544	2025-07-02 12:13:00	11	14	18	6	4	0	\N	L
+547	2025-07-02 12:19:00	11	14	8	4	0	3	\N	\N
+549	2025-07-02 12:21:00	8	4	18	1	0	3	\N	L
+551	2025-07-02 12:26:00	11	14	8	4	1	3	\N	L
+552	2025-07-02 12:28:00	1	18	10	6	4	0	\N	\N
+553	2025-07-02 12:28:00	8	4	11	14	0	0	2	\N
+555	2025-07-02 12:36:00	10	6	1	18	1	3	\N	\N
+557	2025-07-02 12:39:00	8	4	11	14	2	3	\N	\N
+560	2025-07-02 12:43:00	6	10	1	18	3	0	\N	\N
+563	2025-07-02 12:53:00	11	14	8	4	2	3	\N	\N
+564	2025-07-02 12:53:00	6	10	1	18	2	3	\N	\N
+566	2025-07-02 13:00:00	11	14	8	4	1	3	\N	\N
+587	2025-07-03 12:20:00	6	18	1	5	3	0	\N	L
+588	2025-07-03 12:25:00	1	14	6	18	3	1	\N	\N
+589	2025-07-03 12:31:00	1	14	7	18	1	4	\N	L
+590	2025-07-03 12:35:00	7	18	1	6	4	1	\N	C
+591	2025-07-03 12:35:00	10	5	14	8	0	3	\N	\N
+592	2025-07-03 12:39:00	14	8	6	1	0	3	\N	\N
+593	2025-07-03 12:39:00	18	7	23	10	0	1	1	\N
+594	2025-07-03 12:40:00	8	4	10	5	2	3	\N	\N
+595	2025-07-03 12:43:00	6	1	18	14	1	4	\N	C
+596	2025-07-03 12:45:00	7	5	10	23	0	3	\N	\N
+597	2025-07-03 12:51:00	10	23	1	5	3	0	\N	\N
+598	2025-07-03 12:57:00	14	18	8	6	2	1	\N	\N
+599	2025-07-03 13:03:00	10	23	1	7	2	4	\N	\N
+622	2025-07-07 12:14:00	1	12	6	18	0	3	\N	\N
+624	2025-07-07 12:21:00	6	18	4	11	5	0	\N	L
+627	2025-07-07 12:29:00	1	4	10	11	4	0	\N	L
+628	2025-07-07 12:30:00	18	6	8	12	3	1	\N	\N
+630	2025-07-07 12:32:00	1	4	10	11	4	0	\N	L
+631	2025-07-07 12:39:00	18	6	12	8	3	1	\N	\N
+632	2025-07-07 12:39:00	1	4	11	10	0	3	\N	\N
+634	2025-07-07 12:44:00	1	4	10	11	0	3	\N	\N
+636	2025-07-07 12:46:00	6	18	8	12	1	3	\N	\N
+638	2025-07-07 12:49:00	6	18	8	12	0	0	4	\N
+640	2025-07-07 12:55:00	1	4	11	10	3	2	\N	\N
+643	2025-07-07 13:05:00	6	11	4	1	3	2	\N	\N
+653	2025-07-08 12:26:00	6	11	8	4	1	3	\N	\N
+655	2025-07-08 12:31:00	8	4	1	13	4	1	\N	L
+657	2025-07-08 12:36:00	10	14	6	11	1	3	\N	\N
+659	2025-07-08 12:43:00	6	11	10	14	3	0	\N	\N
+662	2025-07-08 12:49:00	6	11	13	1	0	3	\N	\N
+664	2025-07-08 12:55:00	13	1	10	8	0	3	\N	\N
+666	2025-07-08 13:04:00	10	8	6	11	1	3	\N	\N
+673	2025-07-09 12:16:00	6	11	18	1	0	5	\N	C
+675	2025-07-09 12:23:00	18	1	10	8	0	3	\N	\N
+676	2025-07-09 12:32:00	10	8	11	6	2	3	\N	\N
+678	2025-07-09 12:33:00	11	6	13	1	3	0	\N	L
+679	2025-07-09 12:34:00	11	6	13	1	3	0	\N	L
+681	2025-07-09 12:36:00	11	6	18	8	3	0	\N	L
+685	2025-07-09 12:51:00	11	6	1	8	3	2	\N	L
+688	2025-07-09 12:59:00	11	6	18	13	1	3	\N	\N
+690	2025-07-09 13:04:00	1	13	10	6	0	3	\N	\N
+700	2025-07-10 12:27:00	6	18	4	13	3	0	\N	L
+701	2025-07-10 12:28:00	6	18	4	13	1	1	2	\N
+704	2025-07-10 12:33:00	13	4	6	18	3	0	\N	\N
+707	2025-07-10 12:52:00	13	6	1	18	2	3	\N	\N
+747	2025-07-14 12:19:00	2	4	11	18	2	3	\N	\N
+749	2025-07-14 12:26:00	11	18	8	14	1	2	2	\N
+752	2025-07-14 12:32:00	15	18	8	14	3	0	\N	L
+753	2025-07-14 12:32:00	4	2	8	14	5	1	\N	C
+755	2025-07-14 12:43:00	1	11	15	18	1	3	\N	\N
+757	2025-07-14 12:44:00	8	13	4	2	4	2	\N	\N
+758	2025-07-14 12:46:00	14	10	15	18	0	4	\N	C
+759	2025-07-14 12:49:00	15	18	2	5	3	0	\N	L
+760	2025-07-14 12:49:00	8	13	11	1	1	5	\N	C
+762	2025-07-14 12:56:00	4	2	11	1	0	3	\N	\N
+763	2025-07-14 12:57:00	18	15	10	14	1	3	\N	\N
+764	2025-07-14 12:57:00	10	14	18	15	3	1	\N	\N
+766	2025-07-14 13:01:00	11	1	13	8	3	0	\N	\N
+768	2025-07-14 13:08:00	15	13	1	11	1	3	\N	\N
+774	2025-07-15 12:18:00	1	8	2	7	3	0	\N	L
+775	2025-07-15 12:26:00	1	8	11	18	2	5	\N	C
+776	2025-07-15 12:45:00	15	4	25	7	4	0	\N	\N
+777	2025-07-15 12:48:00	15	4	1	2	0	4	\N	\N
+778	2025-07-15 12:54:00	15	4	11	18	3	2	\N	\N
+779	2025-07-15 12:57:00	1	2	8	18	1	3	\N	\N
+780	2025-07-15 13:02:00	25	11	8	18	0	3	\N	\N
+786	2025-07-16 12:23:00	34	4	1	35	3	0	\N	L
+788	2025-07-16 12:24:00	34	4	1	35	3	0	\N	\N
+792	2025-07-16 12:37:00	34	4	35	1	1	4	\N	C
+794	2025-07-16 12:45:00	35	1	25	4	3	0	\N	\N
+789	2025-07-16 12:25:00	1	35	34	4	3	0	\N	L
+815	2025-07-21 12:15:00	2	1	6	11	0	3	\N	\N
+817	2025-07-21 12:19:00	6	11	2	4	0	3	\N	\N
+818	2025-07-21 12:28:00	2	4	6	11	2	3	\N	\N
+822	2025-07-21 12:41:00	6	11	10	15	3	2	\N	\N
+824	2025-07-21 12:47:00	6	11	15	10	3	2	\N	\N
+825	2025-07-21 12:48:00	6	11	2	4	3	0	\N	L
+828	2025-07-21 13:01:00	6	11	10	15	4	2	\N	L
+829	2025-07-21 13:01:00	6	11	10	15	3	2	\N	L
+832	2025-07-21 13:07:00	6	11	1	10	3	1	\N	\N
+842	2025-07-22 12:21:00	6	11	18	2	3	2	\N	\N
+844	2025-07-22 12:32:00	6	11	4	1	5	1	\N	C
+846	2025-07-22 12:37:00	6	11	10	2	3	1	\N	\N
+847	2025-07-22 12:42:00	6	11	2	16	4	1	\N	L
+848	2025-07-22 12:42:00	15	18	1	4	3	0	\N	\N
+850	2025-07-22 12:49:00	6	11	16	1	3	1	\N	\N
+851	2025-07-22 12:51:00	6	11	1	2	3	0	\N	L
+852	2025-07-22 12:52:00	1	2	6	11	0	3	\N	L
+854	2025-07-22 12:54:00	4	10	18	15	3	2	\N	\N
+855	2025-07-22 12:59:00	16	2	6	11	5	1	\N	L
+856	2025-07-22 13:00:00	16	2	15	11	0	4	\N	C
+857	2025-07-22 13:01:00	4	10	1	7	3	0	\N	\N
+860	2025-07-22 13:07:00	7	10	1	16	3	0	\N	\N
+871	2025-07-23 12:17:00	18	6	11	2	3	0	\N	\N
+872	2025-07-23 12:18:00	18	6	1	4	0	3	\N	\N
+874	2025-07-23 12:23:00	1	4	2	11	0	3	\N	\N
+877	2025-07-23 12:29:00	2	11	6	18	3	1	\N	\N
+881	2025-07-23 12:41:00	2	11	4	15	2	3	\N	\N
+882	2025-07-23 12:46:00	4	15	18	6	4	0	\N	L
+884	2025-07-23 12:51:00	4	15	1	2	1	4	\N	C
+886	2025-07-23 12:58:00	1	2	11	18	5	1	\N	L
+889	2025-07-23 13:02:00	1	2	6	4	1	3	\N	\N
+890	2025-07-23 13:12:00	6	1	15	11	2	3	\N	\N
+894	2025-07-24 07:44:00	37	1	11	10	3	0	\N	\N
+895	2025-07-24 07:44:00	37	1	11	10	3	0	\N	\N
+896	2025-07-24 07:53:00	37	1	6	11	3	1	\N	\N
+897	2025-07-24 08:01:00	37	1	10	2	1	3	\N	\N
+898	2025-07-24 08:06:00	11	6	2	10	0	3	\N	\N
+899	2025-07-24 08:08:00	15	37	10	2	0	3	\N	L
+900	2025-07-24 08:11:00	6	11	2	10	3	0	\N	L
+906	2025-07-24 08:25:00	37	15	10	2	3	0	\N	L
+908	2025-07-24 08:35:00	37	15	2	11	3	2	\N	\N
+910	2025-07-24 08:42:00	37	15	1	10	1	2	2	\N
+912	2025-07-24 08:46:00	1	10	2	11	4	2	\N	C;L
+914	2025-07-24 08:53:00	1	10	15	37	0	3	\N	\N
+916	2025-07-24 09:02:00	15	37	2	11	1	3	\N	\N
+917	2025-07-24 09:09:00	2	11	10	1	2	3	\N	\N
+918	2025-07-24 09:18:00	15	37	1	10	2	5	\N	C
+919	2025-07-24 09:22:00	11	10	23	15	3	0	\N	L
+927	2025-07-24 12:42:00	15	10	1	2	0	3	\N	\N
+929	2025-07-24 12:48:00	1	2	15	10	1	3	\N	\N
+930	2025-07-24 12:50:00	15	10	1	2	3	0	\N	L
+932	2025-07-24 12:55:00	15	10	1	2	4	2	\N	L
+933	2025-07-24 13:00:00	15	10	1	2	4	0	\N	C
+946	2025-07-28 12:17:00	15	11	2	4	1	4	\N	C
+948	2025-07-28 12:23:00	2	4	13	1	3	1	\N	\N
+949	2025-07-28 12:24:00	2	4	1	13	3	1	\N	\N
+952	2025-07-28 12:30:00	2	4	15	18	3	0	\N	\N
+953	2025-07-28 12:31:00	18	15	4	2	0	3	\N	\N
+956	2025-07-28 12:36:00	4	2	1	11	3	0	\N	\N
+958	2025-07-28 12:40:00	16	15	13	18	1	3	\N	\N
+959	2025-07-28 12:44:00	10	1	2	4	3	0	\N	\N
+961	2025-07-28 12:48:00	11	16	13	18	3	1	\N	\N
+962	2025-07-28 12:51:00	2	15	10	1	3	2	\N	\N
+964	2025-07-28 12:55:00	11	16	13	4	4	0	\N	C
+965	2025-07-28 12:55:00	11	16	1	13	5	0	\N	L
+967	2025-07-28 13:01:00	18	10	15	2	4	2	\N	\N
+968	2025-07-28 13:01:00	13	1	11	16	0	3	\N	\N
+973	2025-07-29 07:54:00	15	37	1	10	3	0	\N	\N
+974	2025-07-29 08:01:00	15	37	1	10	3	2	\N	L
+975	2025-07-29 08:05:00	15	37	10	1	0	3	\N	\N
+976	2025-07-29 08:07:00	10	1	15	37	3	0	\N	L
+977	2025-07-29 08:17:00	10	1	11	18	1	3	\N	\N
+978	2025-07-29 08:26:00	11	18	37	15	0	3	\N	\N
+979	2025-07-29 08:30:00	15	37	10	1	3	1	\N	L
+980	2025-07-29 08:33:00	15	37	11	18	0	3	\N	L
+981	2025-07-29 08:35:00	11	18	10	1	4	0	\N	C
+983	2025-07-29 08:43:00	11	18	15	37	4	2	\N	C
+984	2025-07-29 08:50:00	11	18	1	10	3	1	\N	\N
+985	2025-07-29 08:55:00	11	18	15	37	0	4	\N	L
+986	2025-07-29 09:04:00	15	37	11	18	1	3	\N	\N
+987	2025-07-29 09:12:00	11	18	15	37	4	1	\N	\N
+991	2025-07-29 12:18:00	11	18	1	2	0	3	\N	\N
+993	2025-07-29 12:25:00	1	2	5	18	3	0	\N	\N
+994	2025-07-29 12:25:00	1	2	18	11	0	3	\N	\N
+996	2025-07-29 12:34:00	5	10	11	18	3	1	\N	\N
+997	2025-07-29 12:34:00	5	10	11	18	3	1	\N	\N
+999	2025-07-29 12:40:00	32	4	1	2	1	3	\N	\N
+1000	2025-07-29 12:41:00	5	10	11	18	3	0	\N	\N
+1002	2025-07-29 12:47:00	2	1	4	32	2	3	\N	\N
+1003	2025-07-29 12:47:00	5	10	11	18	0	3	\N	\N
+1005	2025-07-29 12:56:00	11	18	1	10	1	3	\N	\N
+1006	2025-07-29 13:01:00	11	15	1	10	3	0	\N	\N
+1007	2025-07-29 13:02:00	4	32	5	2	5	0	\N	\N
+1008	2025-07-29 13:03:00	4	32	2	15	3	1	\N	\N
+1017	2025-07-30 11:59:00	38	2	18	32	4	0	\N	L
+1018	2025-07-30 12:03:00	32	18	6	10	3	0	4	\N
+1019	2025-07-30 12:13:00	2	15	18	32	4	1	\N	L
+1022	2025-07-30 12:19:00	11	10	6	4	2	3	\N	\N
+1023	2025-07-30 12:22:00	32	18	2	15	1	4	\N	\N
+1024	2025-07-30 12:28:00	11	10	6	4	3	1	\N	\N
+1025	2025-07-30 12:33:00	1	18	2	15	5	2	\N	\N
+1026	2025-07-30 12:34:00	11	16	4	6	3	0	\N	\N
+1030	2025-07-30 12:44:00	15	2	1	18	3	2	\N	\N
+1032	2025-07-30 12:47:00	6	4	11	16	2	3	\N	\N
+1033	2025-07-30 12:52:00	18	1	15	2	0	5	\N	\N
+1034	2025-07-30 12:55:00	11	16	6	4	3	0	\N	\N
+1036	2025-07-30 12:58:00	1	18	15	2	4	0	\N	\N
+1038	2025-07-30 13:00:00	11	16	4	6	0	3	\N	L
+1058	2025-07-31 12:22:00	15	2	8	1	3	0	\N	L
+1056	2025-07-31 12:19:00	1	2	6	18	2	3	\N	L
+1060	2025-07-31 12:25:00	15	2	8	13	3	0	\N	\N
+1064	2025-07-31 12:29:00	18	6	10	13	1	0	1	\N
+1066	2025-07-31 12:34:00	15	2	1	8	3	2	\N	\N
+1069	2025-07-31 12:36:00	13	10	11	6	3	0	\N	\N
+1072	2025-07-31 12:43:00	15	2	11	6	4	1	\N	L
+1073	2025-07-31 12:44:00	10	13	1	8	3	2	\N	\N
+1075	2025-07-31 12:46:00	18	5	15	2	0	3	\N	L
+1076	2025-07-31 12:49:00	11	6	10	13	3	0	\N	L
+1077	2025-07-31 12:52:00	1	8	15	2	0	3	\N	\N
+1078	2025-07-31 12:54:00	15	2	10	13	0	3	\N	\N
+1079	2025-07-31 12:54:00	18	5	11	6	0	3	\N	\N
+1082	2025-07-31 12:56:00	6	11	15	2	0	3	\N	L
+1083	2025-07-31 13:02:00	10	13	1	8	3	1	\N	\N
+1084	2025-07-31 13:03:00	5	18	15	2	0	3	\N	\N
+1070	2025-07-31 12:37:00	15	2	18	5	3	0	\N	L
+1086	2025-07-31 13:07:00	10	13	11	6	0	3	\N	L
+1098	2025-08-04 12:14:00	16	2	18	6	5	0	\N	L
+1099	2025-08-04 12:19:00	16	2	11	4	3	0	\N	\N
+1101	2025-08-04 12:23:00	16	2	6	18	3	0	\N	\N
+1102	2025-08-04 12:24:00	6	18	5	13	0	0	3	\N
+1103	2025-08-04 12:28:00	18	6	16	1	0	1	4	\N
+1105	2025-08-04 12:34:00	4	8	15	11	2	3	\N	\N
+1106	2025-08-04 12:34:00	18	6	10	2	3	0	\N	\N
+1107	2025-08-04 12:36:00	18	6	16	1	3	0	\N	L
+1109	2025-08-04 12:41:00	11	15	3	13	3	0	\N	\N
+1110	2025-08-04 12:43:00	10	2	15	11	3	2	\N	L
+1112	2025-08-04 12:46:00	6	18	8	4	3	2	\N	\N
+1113	2025-08-04 12:50:00	1	16	10	2	1	3	\N	\N
+1115	2025-08-04 12:53:00	3	13	18	6	0	3	\N	\N
+1116	2025-08-04 12:57:00	15	11	10	2	1	3	\N	\N
+1118	2025-08-04 13:03:00	10	2	1	13	3	0	\N	\N
+1119	2025-08-04 13:03:00	6	3	15	11	3	0	\N	L
+1122	2025-08-04 19:52:00	6	3	10	2	4	4	\N	\N
+1124	2025-08-05 08:06:00	10	37	1	25	3	1	\N	\N
+1125	2025-08-05 08:09:00	10	37	25	2	3	2	\N	\N
+1126	2025-08-05 08:18:00	10	37	2	1	3	2	\N	\N
+1127	2025-08-05 08:24:00	10	37	2	25	0	3	\N	\N
+1135	2025-08-05 12:16:00	2	1	18	6	3	1	\N	\N
+1136	2025-08-05 12:22:00	2	1	4	11	3	0	\N	\N
+1138	2025-08-05 12:25:00	25	8	18	6	0	4	\N	C
+1140	2025-08-05 12:30:00	11	3	2	1	3	1	\N	\N
+1142	2025-08-05 12:33:00	39	13	18	6	5	1	\N	C
+1143	2025-08-05 12:34:00	8	15	11	3	0	0	4	\N
+1144	2025-08-05 12:34:00	16	10	3	11	0	3	\N	L
+1145	2025-08-05 12:36:00	8	15	1	16	3	0	\N	L
+1147	2025-08-05 12:42:00	39	13	2	4	0	3	\N	\N
+1148	2025-08-05 12:43:00	15	8	10	18	1	4	\N	L
+1150	2025-08-05 12:49:00	4	2	6	11	3	2	\N	\N
+1151	2025-08-05 12:50:00	3	16	10	18	0	3	\N	\N
+1154	2025-08-05 12:56:00	10	18	15	39	3	1	\N	\N
+1156	2025-08-05 12:57:00	10	18	6	8	0	3	\N	L
+1157	2025-08-05 12:57:00	13	1	4	2	1	3	\N	\N
+1159	2025-08-05 13:04:00	3	11	6	8	0	3	\N	\N
+1160	2025-08-05 13:04:00	4	2	15	39	2	3	\N	\N
+1162	2025-08-05 13:09:00	10	1	6	13	2	0	3	\N
+1177	2025-08-06 11:25:00	2	1	11	9	1	2	4	\N
+1179	2025-08-06 11:30:00	8	4	2	1	3	1	\N	L
+1182	2025-08-06 11:38:00	11	1	8	4	2	3	\N	\N
+1184	2025-08-06 11:42:00	11	1	2	15	4	0	\N	L
+1187	2025-08-06 11:49:00	11	1	2	3	4	1	\N	L
+1188	2025-08-06 11:56:00	11	1	15	2	3	0	\N	\N
+1190	2025-08-06 12:05:00	11	1	3	15	3	0	\N	\N
+1192	2025-08-06 12:13:00	11	1	2	3	5	0	\N	L
+1193	2025-08-06 12:21:00	11	1	2	15	1	3	\N	\N
+1199	2025-08-06 12:38:00	11	1	2	15	0	3	\N	\N
+1200	2025-08-06 12:39:00	2	15	3	18	3	2	\N	\N
+1203	2025-08-06 12:50:00	2	15	18	3	2	4	\N	L
+1206	2025-08-06 12:59:00	18	3	2	15	0	3	\N	L
+1208	2025-08-06 13:04:00	2	15	18	3	0	4	\N	L
+1209	2025-08-06 13:13:00	18	3	2	15	3	1	\N	\N
+1210	2025-08-06 13:17:00	18	3	15	2	1	3	\N	L
+1224	2025-08-07 12:15:00	11	18	2	6	2	3	\N	\N
+1225	2025-08-07 12:23:00	15	14	6	2	1	2	1	\N
+1226	2025-08-07 12:29:00	6	2	8	18	0	3	\N	\N
+1227	2025-08-07 12:32:00	11	13	18	8	0	4	\N	C
+1230	2025-08-07 12:34:00	18	8	2	1	1	0	3	\N
+1231	2025-08-07 12:37:00	18	8	6	13	0	4	\N	C
+1233	2025-08-07 12:44:00	11	1	15	2	1	3	\N	\N
+1234	2025-08-07 12:46:00	6	13	18	8	3	1	\N	\N
+1236	2025-08-07 12:52:00	15	2	11	1	1	3	\N	\N
+1238	2025-08-07 12:54:00	8	10	6	13	0	3	\N	\N
+1240	2025-08-07 13:01:00	11	1	2	18	1	3	\N	\N
+1241	2025-08-07 13:02:00	15	8	6	13	0	3	\N	\N
+1243	2025-08-07 13:04:00	10	8	13	6	0	3	\N	\N
+1250	2025-08-11 12:10:00	6	15	2	14	0	3	\N	L
+1251	2025-08-11 12:12:00	2	14	1	11	0	3	\N	\N
+1254	2025-08-11 12:19:00	11	1	15	8	0	1	2	\N
+1255	2025-08-11 12:22:00	14	2	6	3	3	0	\N	\N
+1257	2025-08-11 12:27:00	15	8	11	13	3	0	\N	\N
+1259	2025-08-11 12:32:00	1	3	14	2	3	2	\N	\N
+1261	2025-08-11 12:38:00	1	3	13	11	0	3	\N	\N
+1263	2025-08-11 12:40:00	15	8	6	10	2	3	\N	\N
+1264	2025-08-11 12:42:00	1	3	10	6	3	0	\N	L
+1265	2025-08-11 12:46:00	2	14	13	11	3	1	\N	\N
+1267	2025-08-11 12:48:00	15	8	1	3	1	3	\N	\N
+1268	2025-08-11 12:48:00	1	3	8	15	3	1	\N	\N
+1269	2025-08-11 12:53:00	6	10	2	14	4	2	\N	\N
+1270	2025-08-11 12:56:00	13	11	1	3	3	0	\N	\N
+1271	2025-08-11 12:59:00	13	11	2	3	0	3	\N	L
+1274	2025-08-11 13:09:00	2	3	1	15	0	0	2	\N
+1275	2025-08-11 13:09:00	15	1	2	3	2	3	\N	\N
+1280	2025-08-12 12:16:00	1	14	11	15	4	1	\N	C
+1281	2025-08-12 12:20:00	1	14	6	2	0	3	\N	\N
+1283	2025-08-12 12:26:00	6	2	8	15	4	0	\N	L
+1285	2025-08-12 12:33:00	11	14	6	2	3	2	\N	\N
+1286	2025-08-12 12:35:00	11	14	6	2	3	0	\N	L
+1288	2025-08-12 12:36:00	15	8	1	10	3	1	\N	\N
+1289	2025-08-12 12:38:00	15	8	1	10	0	3	\N	L
+1291	2025-08-12 12:41:00	11	14	6	2	3	0	\N	\N
+1292	2025-08-12 12:46:00	11	14	2	6	4	2	\N	C
+1293	2025-08-12 12:47:00	1	10	15	8	3	1	\N	\N
+1294	2025-08-12 12:48:00	6	2	11	14	3	0	\N	L
+1296	2025-08-12 12:51:00	1	10	8	15	4	0	\N	L
+1297	2025-08-12 12:53:00	11	14	6	2	0	5	\N	C
+1299	2025-08-12 12:57:00	1	10	7	8	3	0	\N	\N
+1302	2025-08-12 13:04:00	11	14	6	2	2	3	\N	\N
+1298	2025-08-12 12:55:00	6	2	11	15	3	0	\N	L
+1309	2025-08-13 12:14:00	8	14	1	2	1	3	\N	\N
+1310	2025-08-13 12:15:00	18	3	6	15	4	2	\N	\N
+1312	2025-08-13 12:19:00	1	2	8	14	1	4	\N	C
+1314	2025-08-13 12:23:00	8	14	11	13	0	2	3	\N
+1316	2025-08-13 12:26:00	1	2	8	14	0	4	\N	C
+1317	2025-08-13 12:29:00	18	3	15	6	3	2	\N	\N
+1318	2025-08-13 12:32:00	8	14	13	11	0	3	\N	\N
+1321	2025-08-13 12:40:00	13	11	15	6	3	0	\N	\N
+1322	2025-08-13 12:41:00	18	3	2	1	2	3	\N	\N
+1324	2025-08-13 12:47:00	11	13	8	14	1	3	\N	\N
+1325	2025-08-13 12:48:00	2	1	6	3	3	0	\N	\N
+1326	2025-08-13 12:54:00	2	1	13	11	0	3	\N	\N
+1328	2025-08-13 12:55:00	10	18	2	1	0	0	2	\N
+1331	2025-08-13 13:00:00	14	8	1	2	3	0	\N	\N
+1332	2025-08-13 13:02:00	14	8	10	18	3	0	\N	\N
+1334	2025-08-13 13:03:00	3	6	11	13	3	1	\N	\N
+1336	2025-08-13 13:11:00	6	3	18	2	2	3	\N	\N
+1340	2025-08-14 12:18:00	18	6	14	2	3	0	\N	\N
+1341	2025-08-14 12:22:00	18	6	15	1	0	3	\N	\N
+1343	2025-08-14 12:25:00	18	6	13	2	0	0	2	\N
+1344	2025-08-14 12:30:00	11	14	15	1	3	1	\N	\N
+1345	2025-08-14 12:33:00	13	2	18	3	0	3	\N	\N
+1348	2025-08-14 12:39:00	18	3	10	1	1	3	2	L
+1349	2025-08-14 12:40:00	15	6	11	14	3	2	\N	\N
+1351	2025-08-14 12:41:00	13	2	10	1	0	3	\N	L
+1352	2025-08-14 12:42:00	18	3	15	6	4	0	\N	C
+1353	2025-08-14 12:45:00	3	18	13	2	0	0	3	\N
+1354	2025-08-14 12:48:00	15	6	18	3	4	0	\N	C
+1355	2025-08-14 12:48:00	10	1	11	14	0	3	\N	\N
+1356	2025-08-14 12:54:00	13	2	15	6	3	0	\N	\N
+1357	2025-08-14 12:57:00	13	2	10	1	0	1	2	\N
+1358	2025-08-14 13:00:00	14	11	18	3	3	1	\N	\N
+1359	2025-08-14 13:04:00	10	1	15	6	3	0	\N	\N
+1362	2025-08-14 13:07:00	10	1	6	13	0	3	\N	L
+1363	2025-08-14 13:07:00	2	13	11	14	1	3	\N	\N
+1365	2025-08-14 13:19:00	13	6	15	10	4	2	\N	\N
+1366	2025-08-14 13:28:00	13	6	2	15	3	2	\N	\N
+1373	2025-08-15 11:15:00	14	8	2	15	0	3	\N	\N
+1374	2025-08-15 11:17:00	2	15	13	8	0	3	\N	L
+1375	2025-08-15 11:17:00	14	8	2	15	3	0	\N	L
+1376	2025-08-15 11:26:00	8	13	15	14	1	6	\N	\N
+1377	2025-08-15 11:31:00	15	14	2	8	3	0	\N	\N
+1378	2025-08-15 11:39:00	14	15	8	6	4	2	\N	\N
+1379	2025-08-15 11:48:00	2	18	8	13	3	1	\N	\N
+1380	2025-08-15 11:58:00	15	18	13	8	2	3	\N	\N
+1381	2025-08-15 12:02:00	13	8	2	6	0	3	\N	\N
+1384	2025-08-15 12:12:00	6	2	18	13	3	1	\N	\N
+1388	2025-08-18 12:10:00	6	18	8	15	3	0	\N	L
+1390	2025-08-18 12:22:00	2	15	8	40	1	3	\N	\N
+1392	2025-08-18 12:27:00	8	40	13	5	1	4	\N	L
+1393	2025-08-18 12:28:00	3	1	6	18	1	3	\N	\N
+1396	2025-08-18 12:34:00	10	2	6	18	1	3	\N	\N
+1398	2025-08-18 12:38:00	5	13	1	15	2	3	\N	\N
+1399	2025-08-18 12:39:00	1	15	2	8	0	3	\N	L
+1402	2025-08-18 12:49:00	13	15	18	6	3	0	\N	\N
+1403	2025-08-18 12:50:00	2	8	5	10	2	3	\N	\N
+1406	2025-08-18 12:53:00	13	15	1	16	0	3	\N	\N
+1407	2025-08-18 12:54:00	6	2	16	1	0	0	2	\N
+1408	2025-08-18 12:58:00	3	18	10	5	1	3	\N	\N
+1411	2025-08-18 13:04:00	13	8	16	1	2	3	\N	\N
+1412	2025-08-18 13:04:00	2	6	10	5	5	1	\N	\N
+1414	2025-08-18 13:08:00	3	15	16	1	4	0	\N	\N
+1416	2025-08-18 13:09:00	10	5	13	6	4	0	\N	C
+1419	2025-08-19 08:27:00	10	18	3	2	3	0	\N	\N
+1420	2025-08-19 08:35:00	10	18	1	6	5	1	\N	L
+1421	2025-08-19 08:43:00	10	18	2	3	3	2	\N	L
+1422	2025-08-19 08:49:00	10	18	6	1	0	3	\N	\N
+1423	2025-08-19 08:55:00	1	6	2	3	0	3	\N	\N
+1425	2025-08-19 08:57:00	10	18	2	3	3	0	\N	L
+1426	2025-08-19 09:08:00	1	6	2	3	1	3	\N	\N
+1429	2025-08-19 12:10:00	2	15	18	6	3	0	\N	L
+1430	2025-08-19 12:13:00	2	15	18	6	3	0	\N	L
+1434	2025-08-19 12:20:00	2	15	18	6	3	1	\N	\N
+1436	2025-08-19 12:23:00	2	15	18	6	3	0	\N	L
+1437	2025-08-19 12:23:00	13	8	10	14	4	0	\N	C
+1438	2025-08-19 12:25:00	13	8	5	14	3	0	\N	L
+1440	2025-08-19 12:26:00	2	15	10	6	3	0	\N	\N
+1441	2025-08-19 12:30:00	18	14	8	13	0	3	\N	\N
+1443	2025-08-19 12:34:00	5	10	2	15	1	5	\N	L
+1445	2025-08-19 12:38:00	2	15	16	6	4	0	\N	L
+1446	2025-08-19 12:39:00	1	3	8	13	3	2	\N	\N
+1447	2025-08-19 12:39:00	2	15	18	14	4	0	\N	C
+1449	2025-08-19 12:44:00	16	6	2	15	4	0	\N	L
+1450	2025-08-19 12:47:00	10	5	1	3	2	3	\N	\N
+1451	2025-08-19 12:48:00	18	14	16	6	0	3	1	\N
+1452	2025-08-19 12:48:00	1	3	8	13	3	0	\N	L
+1453	2025-08-19 12:50:00	16	6	2	15	3	0	\N	L
+1456	2025-08-19 12:56:00	16	6	18	14	5	0	\N	L
+1457	2025-08-19 12:57:00	5	10	1	3	3	2	\N	\N
+1458	2025-08-19 13:00:00	8	13	6	16	1	0	1	\N
+1460	2025-08-19 13:11:00	8	13	2	15	1	3	\N	\N
+1462	2025-08-19 13:18:00	2	15	6	3	3	0	\N	\N
+1463	2025-08-19 13:19:00	10	5	15	2	3	0	\N	\N
+1465	2025-08-19 13:23:00	6	3	2	15	0	3	\N	\N
+1472	2025-08-20 12:14:00	2	14	8	6	3	0	\N	\N
+1473	2025-08-20 12:17:00	2	14	15	18	0	0	2	\N
+1475	2025-08-20 12:27:00	15	18	8	6	3	1	\N	\N
+1476	2025-08-20 12:30:00	15	18	8	6	3	0	\N	L
+1479	2025-08-20 12:34:00	14	2	13	1	0	3	\N	\N
+1480	2025-08-20 12:37:00	6	3	15	18	0	3	\N	\N
+1481	2025-08-20 12:42:00	1	13	2	8	5	2	\N	L
+1483	2025-08-20 12:44:00	8	3	13	1	0	4	\N	C
+1484	2025-08-20 12:45:00	13	1	2	8	3	0	\N	L
+1485	2025-08-20 12:47:00	18	15	6	14	1	3	\N	\N
+1488	2025-08-20 12:54:00	8	3	13	1	3	0	\N	\N
+1489	2025-08-20 12:56:00	15	2	6	14	2	3	\N	\N
+1492	2025-08-20 13:03:00	13	1	6	2	0	3	\N	\N
+1493	2025-08-20 13:05:00	18	7	8	3	3	0	\N	\N
+1494	2025-08-20 13:13:00	6	2	1	13	2	2	4	\N
+1505	2025-08-21 12:04:00	2	14	18	6	5	0	\N	L
+1506	2025-08-21 12:12:00	2	14	18	6	1	6	\N	\N
+1508	2025-08-21 12:17:00	18	11	6	8	0	4	\N	L
+1510	2025-08-21 12:21:00	6	8	1	14	4	0	\N	L
+1512	2025-08-21 12:30:00	2	3	18	11	2	3	\N	\N
+1513	2025-08-21 12:30:00	6	8	13	10	1	3	\N	\N
+1514	2025-08-21 12:34:00	11	18	15	1	0	3	\N	\N
+1516	2025-08-21 12:40:00	15	1	3	8	0	3	\N	\N
+1518	2025-08-21 12:44:00	18	6	14	2	1	3	\N	\N
+1519	2025-08-21 12:48:00	2	14	10	1	3	1	\N	\N
+1520	2025-08-21 12:52:00	8	3	11	13	2	4	\N	L
+1522	2025-08-21 12:55:00	6	15	2	14	1	5	\N	C
+1524	2025-08-21 12:58:00	11	13	1	18	0	3	\N	\N
+1525	2025-08-21 12:59:00	10	8	14	2	3	1	\N	\N
+1528	2025-08-21 13:11:00	15	1	6	3	3	1	\N	\N
+1532	2025-08-21 13:17:00	2	13	6	15	3	0	\N	\N
+1533	2025-08-21 13:24:00	2	13	6	15	3	1	\N	\N
+1534	2025-08-21 13:34:00	2	13	6	3	3	1	\N	\N
+1535	2025-08-21 13:43:00	2	13	15	18	2	3	\N	\N
+1536	2025-08-21 13:51:00	2	3	15	18	1	4	\N	L
+1547	2025-08-26 12:16:00	1	2	6	4	0	4	\N	\N
+1548	2025-08-26 12:24:00	6	4	11	8	3	0	\N	\N
+1549	2025-08-26 12:27:00	2	1	15	5	2	3	\N	\N
+1552	2025-08-26 12:32:00	15	5	10	14	0	3	\N	\N
+1554	2025-08-26 12:33:00	6	4	3	13	2	0	3	\N
+1555	2025-08-26 12:36:00	2	16	6	4	4	0	\N	L
+1556	2025-08-26 12:37:00	8	11	10	14	0	3	\N	\N
+1558	2025-08-26 12:42:00	10	14	3	13	0	3	\N	\N
+1559	2025-08-26 12:44:00	16	2	15	5	3	1	\N	\N
+1561	2025-08-26 12:46:00	16	2	8	11	3	0	\N	L
+1563	2025-08-26 12:49:00	4	6	3	13	0	4	\N	\N
+1564	2025-08-26 12:53:00	16	2	8	11	0	0	3	\N
+1565	2025-08-26 12:56:00	15	5	3	13	3	0	\N	\N
+1567	2025-08-26 12:57:00	16	2	6	1	3	0	\N	L
+1568	2025-08-26 12:57:00	10	4	15	5	0	0	3	\N
+1569	2025-08-26 12:58:00	11	8	16	2	3	0	\N	L
+1571	2025-08-26 13:04:00	10	4	13	3	3	0	\N	\N
+1573	2025-08-26 13:06:00	6	15	8	11	1	5	\N	\N
+1577	2025-08-27 12:24:00	8	2	6	18	0	3	\N	\N
+1578	2025-08-27 12:24:00	2	1	8	13	3	0	\N	\N
+1579	2025-08-27 12:25:00	2	1	4	10	3	0	\N	L
+1580	2025-08-27 12:27:00	6	18	3	11	3	2	\N	L
+1582	2025-08-27 12:33:00	2	1	8	13	5	1	\N	C
+1585	2025-08-27 12:37:00	2	1	3	11	1	3	\N	L
+1586	2025-08-27 12:38:00	10	4	6	18	3	1	\N	\N
+1587	2025-08-27 12:44:00	18	6	3	11	0	3	\N	\N
+1588	2025-08-27 12:45:00	10	4	8	13	5	2	\N	C
+1590	2025-08-27 12:50:00	1	2	3	11	1	3	\N	\N
+1591	2025-08-27 12:50:00	10	4	6	18	4	1	\N	\N
+1593	2025-08-27 12:56:00	11	3	18	6	3	0	\N	\N
+1595	2025-08-27 13:01:00	3	11	2	1	1	4	\N	L
+1597	2025-08-27 13:11:00	4	10	6	13	6	2	\N	C
+1600	2025-08-28 07:43:00	6	37	2	1	4	0	\N	L
+1601	2025-08-28 07:56:00	2	1	13	18	1	3	\N	\N
+1602	2025-08-28 07:57:00	13	18	6	15	3	0	\N	L
+1603	2025-08-28 08:09:00	13	18	2	41	4	0	\N	L
+1604	2025-08-28 08:10:00	13	18	2	37	4	1	\N	L
+1605	2025-08-28 08:10:00	1	16	6	15	3	1	\N	\N
+1606	2025-08-28 08:15:00	1	16	15	6	3	0	\N	\N
+1607	2025-08-28 08:16:00	18	13	2	37	1	3	\N	L
+1608	2025-08-28 08:22:00	1	16	6	15	4	0	\N	\N
+1609	2025-08-28 08:25:00	13	18	2	37	3	1	\N	\N
+1610	2025-08-28 08:28:00	6	15	1	16	3	2	\N	\N
+1611	2025-08-28 08:29:00	13	18	2	37	3	0	\N	\N
+1612	2025-08-28 08:38:00	13	18	2	37	6	0	\N	C
+1613	2025-08-28 08:44:00	13	18	2	37	4	0	\N	L
+1614	2025-08-28 08:59:00	13	18	37	2	5	1	\N	L
+1615	2025-08-28 09:01:00	13	18	37	2	3	0	\N	L
+1616	2025-08-28 09:09:00	1	3	2	37	3	0	\N	L
+1617	2025-08-28 09:17:00	1	3	2	37	2	5	\N	L
+1618	2025-08-28 12:18:00	2	18	4	11	0	3	\N	\N
+1621	2025-08-28 12:26:00	4	11	2	18	3	2	\N	\N
+1623	2025-08-28 12:33:00	2	18	10	16	0	3	\N	\N
+1624	2025-08-28 12:37:00	3	11	5	15	1	3	\N	\N
+1625	2025-08-28 12:39:00	6	13	10	16	3	0	\N	\N
+1626	2025-08-28 12:41:00	6	13	18	2	4	0	\N	C
+1627	2025-08-28 12:43:00	1	8	5	15	3	0	\N	\N
+1629	2025-08-28 12:44:00	15	5	8	13	3	0	\N	\N
+1631	2025-08-28 12:52:00	6	13	11	3	3	1	\N	\N
+1634	2025-08-28 12:57:00	1	8	5	15	2	3	\N	L
+1635	2025-08-28 12:58:00	1	8	10	16	3	0	\N	\N
+1636	2025-08-28 12:59:00	13	6	2	18	3	0	\N	\N
+1637	2025-08-28 13:02:00	10	5	3	2	4	0	\N	L
+1639	2025-08-28 13:05:00	15	5	11	3	0	3	\N	\N
+1642	2025-08-28 13:11:00	13	1	10	16	2	3	\N	\N
+1644	2025-08-28 13:23:00	11	3	6	2	4	0	\N	\N
+1645	2025-08-29 12:11:00	13	6	1	2	3	0	\N	\N
+1649	2025-08-29 12:19:00	10	18	6	13	3	0	\N	\N
+1650	2025-08-29 12:21:00	2	14	13	6	3	0	\N	L
+1651	2025-08-29 12:31:00	2	14	1	18	2	5	\N	L
+1652	2025-08-29 12:38:00	1	18	6	10	0	3	\N	\N
+1654	2025-08-29 12:47:00	6	10	3	13	1	3	\N	\N
+1655	2025-08-29 12:51:00	2	13	14	18	3	0	\N	\N
+1656	2025-08-29 12:54:00	2	13	6	1	0	3	\N	L
+1657	2025-08-29 13:01:00	6	1	14	10	1	3	\N	\N
+1660	2025-08-29 13:20:00	18	1	14	10	1	3	\N	\N
+1661	2025-08-29 13:22:00	10	14	2	13	3	0	\N	L
+1662	2025-08-29 13:27:00	10	14	6	1	3	0	\N	\N
+1663	2025-08-29 13:34:00	10	14	18	2	1	3	\N	\N
+1664	2025-08-29 13:41:00	18	2	6	14	3	2	\N	\N
+1673	2025-09-01 08:26:00	6	13	3	1	0	3	\N	\N
+1674	2025-09-01 08:36:00	3	1	6	10	2	3	\N	\N
+1675	2025-09-01 08:44:00	6	10	13	1	0	3	\N	\N
+1676	2025-09-01 08:44:00	13	1	6	3	3	0	\N	L
+1677	2025-09-01 08:47:00	6	1	3	10	0	3	\N	L
+1678	2025-09-01 08:48:00	3	10	6	1	0	0	1	\N
+1679	2025-09-01 12:20:00	11	2	6	18	1	3	\N	\N
+1680	2025-09-01 12:23:00	1	3	8	15	0	3	\N	\N
+1682	2025-09-01 12:28:00	13	4	6	18	3	0	\N	\N
+1684	2025-09-01 12:29:00	8	15	2	10	3	2	\N	L
+1685	2025-09-01 12:38:00	1	3	13	4	2	3	\N	\N
+1686	2025-09-01 12:39:00	11	18	8	15	3	2	\N	\N
+1688	2025-09-01 12:42:00	10	15	13	4	0	3	\N	L
+1691	2025-09-01 12:49:00	18	11	6	2	3	2	\N	\N
+1693	2025-09-01 12:52:00	8	3	13	4	6	1	\N	C
+1694	2025-09-01 12:55:00	8	3	6	2	4	0	\N	C
+1695	2025-09-01 12:58:00	18	11	10	1	2	3	\N	\N
+1697	2025-09-01 13:00:00	10	1	6	2	0	3	\N	L
+1698	2025-09-01 13:01:00	6	2	10	1	0	3	\N	L
+1700	2025-09-01 13:08:00	10	1	6	2	2	3	\N	\N
+1701	2025-09-01 13:09:00	6	2	13	1	0	0	4	\N
+1702	2025-09-01 13:17:00	1	13	6	2	3	2	\N	\N
+1703	2025-09-02 07:50:00	6	2	11	18	0	3	\N	\N
+1704	2025-09-02 07:57:00	11	18	6	14	0	3	\N	\N
+1705	2025-09-02 08:03:00	6	14	2	18	1	3	\N	\N
+1706	2025-09-02 08:13:00	2	18	11	13	2	3	\N	\N
+1707	2025-09-02 08:23:00	11	13	14	6	2	3	\N	\N
+1708	2025-09-02 08:45:00	11	13	2	18	2	3	\N	\N
+1709	2025-09-02 12:20:00	1	4	11	8	3	0	\N	\N
+1710	2025-09-02 12:21:00	1	4	8	11	3	0	\N	L
+1712	2025-09-02 12:24:00	1	4	13	2	3	0	\N	L
+1713	2025-09-02 12:29:00	1	4	2	13	0	3	\N	\N
+1714	2025-09-02 12:34:00	11	3	10	8	2	3	\N	\N
+1717	2025-09-02 12:40:00	1	4	2	13	3	2	\N	\N
+1718	2025-09-02 12:41:00	10	8	3	11	1	3	\N	\N
+1720	2025-09-02 12:43:00	2	13	1	4	1	0	2	\N
+1721	2025-09-02 12:50:00	3	11	8	10	2	3	\N	\N
+1722	2025-09-02 12:51:00	4	1	2	13	1	3	\N	\N
+1725	2025-09-02 12:54:00	18	11	8	10	4	0	\N	\N
+1726	2025-09-02 12:57:00	1	4	2	13	3	0	\N	L
+1727	2025-09-02 13:05:00	6	4	13	2	3	0	\N	\N
+1728	2025-09-02 13:06:00	10	8	1	3	5	2	\N	L
+1729	2025-09-02 13:07:00	1	3	2	13	3	0	\N	L
+1730	2025-09-02 13:13:00	6	13	2	18	2	4	\N	\N
+1731	2025-09-02 13:31:00	2	13	6	3	2	5	\N	L
+1732	2025-09-02 13:40:00	6	3	2	13	1	3	\N	\N
+1733	2025-09-02 13:49:00	2	13	6	3	2	3	\N	\N
+1736	2025-09-03 12:28:00	15	11	2	1	6	2	\N	\N
+1738	2025-09-03 12:29:00	4	5	3	18	0	4	\N	\N
+1740	2025-09-03 12:35:00	18	3	2	1	1	4	\N	C
+1741	2025-09-03 12:40:00	15	11	4	5	3	1	\N	\N
+1742	2025-09-03 12:41:00	2	1	10	13	4	1	\N	C
+1744	2025-09-03 12:43:00	2	1	3	18	4	0	\N	C
+1746	2025-09-03 12:45:00	15	11	4	5	1	3	\N	L
+1748	2025-09-03 12:51:00	10	13	1	2	5	2	\N	C
+1749	2025-09-03 12:53:00	5	4	18	3	3	0	\N	\N
+1750	2025-09-03 12:57:00	10	13	11	15	0	3	\N	\N
+1751	2025-09-03 12:58:00	11	15	3	6	0	0	1	\N
+1753	2025-09-03 12:59:00	1	2	4	5	0	3	\N	\N
+1755	2025-09-03 13:14:00	4	5	15	2	1	3	\N	\N
+1756	2025-09-03 13:16:00	6	3	18	13	4	2	\N	L
+1757	2025-09-03 13:16:00	6	3	18	13	3	0	\N	\N
+1758	2025-09-03 13:18:00	6	3	18	13	3	0	\N	\N
+1760	2025-09-04 07:46:00	6	18	1	3	4	2	\N	L
+1761	2025-09-04 07:54:00	6	18	13	11	0	3	\N	\N
+1762	2025-09-04 08:07:00	13	3	1	2	4	2	\N	C
+1763	2025-09-04 08:25:00	11	10	6	18	3	0	\N	\N
+1764	2025-09-04 08:26:00	13	3	1	2	0	3	\N	\N
+1765	2025-09-04 08:28:00	1	2	18	6	3	0	\N	L
+1766	2025-09-04 08:32:00	11	10	3	13	3	0	\N	\N
+1767	2025-09-04 08:35:00	11	10	18	6	4	0	\N	L
+1768	2025-09-04 08:40:00	42	37	1	2	2	2	1	\N
+1769	2025-09-04 08:42:00	11	10	3	13	3	0	\N	\N
+1770	2025-09-04 08:50:00	18	6	1	2	2	3	\N	\N
+1771	2025-09-04 08:52:00	13	3	1	2	0	3	\N	L
+1772	2025-09-04 08:54:00	11	10	37	42	2	3	\N	\N
+1773	2025-09-04 08:58:00	3	13	42	10	0	0	2	\N
+1774	2025-09-04 08:59:00	1	2	18	6	3	0	\N	\N
+1775	2025-09-04 09:04:00	1	2	13	6	0	3	\N	\N
+1776	2025-09-04 12:12:00	15	6	1	2	1	3	\N	L
+1777	2025-09-04 12:16:00	1	2	4	8	4	0	\N	L
+1778	2025-09-04 12:21:00	1	2	8	4	3	0	\N	\N
+1779	2025-09-04 12:22:00	11	13	6	15	5	2	\N	L
+1780	2025-09-04 12:24:00	3	10	1	2	3	0	\N	L
+1782	2025-09-04 12:26:00	8	4	15	6	3	0	\N	\N
+1783	2025-09-04 12:29:00	10	3	11	13	0	3	\N	\N
+1785	2025-09-04 12:33:00	4	8	2	1	0	3	\N	\N
+1786	2025-09-04 12:33:00	11	13	6	5	0	3	\N	\N
+1789	2025-09-04 12:40:00	3	15	2	1	1	3	\N	L
+1790	2025-09-04 12:42:00	8	10	6	5	3	1	\N	\N
+1792	2025-09-04 12:46:00	11	13	2	1	0	3	\N	\N
+1793	2025-09-04 12:49:00	3	15	8	10	0	3	\N	\N
+1794	2025-09-04 12:51:00	8	10	11	13	3	0	\N	L
+1796	2025-09-04 12:52:00	2	1	6	5	1	3	\N	\N
+1798	2025-09-04 12:57:00	13	3	8	10	0	5	\N	L
+1799	2025-09-04 13:00:00	10	8	1	15	0	0	1	\N
+1801	2025-09-04 13:02:00	15	1	13	3	0	4	\N	C
+1802	2025-09-04 13:03:00	2	11	5	6	2	3	\N	\N
+1803	2025-09-04 13:09:00	11	2	13	3	3	0	\N	\N
+1804	2025-09-04 13:15:00	11	2	13	8	3	0	\N	\N
+1805	2025-09-05 11:58:00	13	10	5	6	3	1	\N	L
+1809	2025-09-05 12:08:00	13	10	5	6	2	3	\N	\N
+1810	2025-09-05 12:18:00	2	1	6	5	3	2	\N	\N
+1811	2025-09-05 12:23:00	2	1	5	10	3	0	\N	\N
+1812	2025-09-05 12:33:00	13	10	8	6	3	1	\N	L
+1813	2025-09-05 12:40:00	10	13	5	1	1	3	\N	\N
+1814	2025-09-05 12:42:00	5	1	6	2	0	3	\N	L
+1815	2025-09-05 12:51:00	6	2	8	10	2	4	\N	L
+1816	2025-09-05 13:00:00	8	10	5	1	2	3	\N	\N
+1817	2025-09-05 13:08:00	5	1	6	2	1	3	\N	\N
+1818	2025-09-05 13:21:00	1	5	10	8	0	3	\N	L
+1819	2025-09-08 08:38:00	10	6	15	2	2	3	\N	\N
+1820	2025-09-08 08:41:00	15	2	10	11	0	4	\N	C
+1821	2025-09-08 08:45:00	10	11	6	2	1	3	\N	\N
+1822	2025-09-08 08:49:00	6	2	10	15	4	0	\N	L
+1823	2025-09-08 09:02:00	6	2	11	15	2	3	\N	\N
+1826	2025-09-08 12:14:00	1	2	6	19	1	0	2	\N
+1827	2025-09-08 12:23:00	8	4	11	26	3	1	\N	\N
+1828	2025-09-08 12:24:00	6	19	1	2	3	1	\N	\N
+1830	2025-09-08 12:31:00	3	18	8	4	3	0	\N	\N
+1831	2025-09-08 12:32:00	13	10	6	19	3	0	\N	\N
+1832	2025-09-08 12:34:00	5	11	3	18	3	0	\N	L
+1834	2025-09-08 12:39:00	1	2	13	10	1	3	\N	\N
+1835	2025-09-08 12:41:00	8	4	11	5	5	2	\N	L
+1837	2025-09-08 12:42:00	6	19	13	10	1	0	2	\N
+1838	2025-09-08 12:45:00	15	18	8	4	3	0	\N	L
+1840	2025-09-08 12:52:00	10	13	3	2	2	3	\N	\N
+1841	2025-09-08 12:52:00	18	15	5	1	0	3	\N	\N
+1843	2025-09-08 12:56:00	6	11	1	5	3	0	\N	L
+1844	2025-09-08 13:00:00	4	19	2	3	3	1	\N	\N
+1846	2025-09-08 13:03:00	6	11	8	10	2	3	\N	\N
+1847	2025-09-08 13:05:00	8	10	1	5	3	0	\N	L
+1848	2025-09-08 13:06:00	18	15	13	4	2	5	\N	C
+1850	2025-09-08 13:10:00	2	3	8	10	1	4	\N	C
+1859	2025-09-09 12:16:00	1	2	11	8	2	3	\N	L
+1862	2025-09-09 12:27:00	11	8	4	13	3	2	\N	\N
+1864	2025-09-09 12:34:00	11	8	5	2	2	3	\N	\N
+1866	2025-09-09 12:39:00	10	1	4	13	2	5	\N	L
+1867	2025-09-09 12:40:00	15	3	5	2	0	3	\N	\N
+1869	2025-09-09 12:44:00	4	13	11	8	0	3	\N	\N
+1870	2025-09-09 12:46:00	10	1	5	2	5	1	\N	L
+1871	2025-09-09 12:51:00	10	1	13	4	1	5	\N	C
+1873	2025-09-09 12:57:00	11	8	15	3	3	2	\N	\N
+1875	2025-09-09 12:57:00	4	13	5	2	0	3	\N	\N
+1884	2025-09-10 12:13:00	14	6	1	2	0	3	\N	\N
+1886	2025-09-10 12:21:00	1	2	6	11	1	3	\N	\N
+1888	2025-09-10 12:27:00	14	13	11	6	0	3	\N	\N
+1889	2025-09-10 12:28:00	8	4	5	3	3	2	\N	C
+1891	2025-09-10 12:32:00	8	4	2	14	0	3	\N	\N
+1892	2025-09-10 12:35:00	1	10	6	11	3	0	\N	\N
+1894	2025-09-10 12:39:00	10	1	8	5	3	0	\N	L
+1895	2025-09-10 12:40:00	13	3	2	14	0	3	\N	\N
+1896	2025-09-10 12:43:00	13	11	1	10	4	0	\N	L
+1898	2025-09-10 12:46:00	4	6	2	14	0	3	\N	\N
+1899	2025-09-10 12:53:00	2	14	5	10	1	3	\N	\N
+1901	2025-09-10 12:55:00	8	3	11	13	2	5	\N	L
+1902	2025-09-10 12:57:00	4	6	13	11	0	3	\N	L
+1904	2025-09-10 13:00:00	1	15	10	5	1	3	\N	\N
+1905	2025-09-10 13:04:00	2	3	11	13	1	4	\N	\N
+1907	2025-09-10 13:11:00	13	2	15	3	5	2	\N	C
+1911	2025-09-11 07:45:00	13	6	1	2	0	3	\N	L
+1912	2025-09-11 07:54:00	1	2	13	6	1	3	\N	\N
+1913	2025-09-11 08:02:00	13	6	11	15	2	3	\N	\N
+1914	2025-09-11 08:14:00	11	15	1	2	3	1	\N	\N
+1915	2025-09-11 08:24:00	11	15	6	13	0	3	\N	\N
+1916	2025-09-11 08:35:00	6	13	1	2	2	3	\N	\N
+1917	2025-09-11 08:37:00	2	1	11	15	3	0	\N	L
+1918	2025-09-11 08:46:00	2	1	6	13	1	3	\N	\N
+1919	2025-09-11 08:55:00	2	11	13	6	2	3	\N	\N
+1920	2025-09-11 09:05:00	13	6	1	2	2	3	\N	\N
+1921	2025-09-11 09:11:00	1	2	11	6	0	3	\N	\N
+1922	2025-09-11 09:12:00	11	6	1	2	3	0	\N	\N
+1924	2025-09-11 12:23:00	11	6	1	2	3	2	\N	\N
+1925	2025-09-11 12:24:00	4	8	13	10	0	4	\N	L
+1927	2025-09-11 12:28:00	11	6	1	15	0	3	\N	\N
+1928	2025-09-11 12:31:00	8	2	13	10	3	1	\N	\N
+1929	2025-09-11 12:33:00	11	6	1	15	1	3	\N	L
+1931	2025-09-11 12:41:00	2	8	3	13	2	3	\N	\N
+1933	2025-09-11 12:42:00	11	10	1	15	3	1	\N	\N
+1935	2025-09-11 12:53:00	8	6	3	13	3	1	\N	\N
+1937	2025-09-11 12:53:00	2	15	11	10	3	2	\N	\N
+1939	2025-09-11 13:01:00	10	1	15	2	1	3	\N	\N
+1941	2025-09-11 13:06:00	13	6	11	3	5	0	\N	L
+1942	2025-09-11 13:06:00	11	3	13	6	0	5	\N	L
+1943	2025-09-11 13:12:00	1	10	2	15	2	3	\N	\N
+1950	2025-09-12 12:01:00	2	13	8	1	0	3	\N	L
+1954	2025-09-12 12:14:00	6	13	1	15	3	2	\N	\N
+1956	2025-09-12 12:21:00	15	1	2	10	3	2	\N	\N
+1959	2025-09-12 12:32:00	15	1	6	13	5	2	\N	L
+1961	2025-09-12 12:39:00	2	10	1	15	3	1	\N	\N
+1964	2025-09-12 12:58:00	2	1	13	6	6	1	\N	\N
+1965	2025-09-15 12:18:00	2	1	14	6	3	1	\N	\N
+1966	2025-09-15 12:20:00	2	1	11	8	0	3	\N	L
+1967	2025-09-15 12:27:00	14	10	2	1	2	3	\N	\N
+1968	2025-09-15 12:28:00	6	3	11	8	1	3	\N	\N
+1969	2025-09-15 12:35:00	4	5	2	1	1	3	\N	\N
+1970	2025-09-15 12:35:00	11	8	14	10	3	1	\N	\N
+1971	2025-09-15 12:38:00	11	8	4	5	4	0	\N	C
+1976	2025-09-15 12:44:00	11	8	14	10	3	0	\N	\N
+1979	2025-09-15 12:52:00	2	1	3	6	0	0	1	\N
+1980	2025-09-15 12:53:00	5	4	11	8	3	1	\N	\N
+1981	2025-09-15 12:55:00	10	15	6	3	0	3	\N	L
+1983	2025-09-15 12:59:00	6	3	11	8	3	0	\N	L
+1984	2025-09-15 13:01:00	1	2	5	4	4	1	\N	L
+1985	2025-09-15 13:07:00	1	2	5	11	1	2	4	\N
+1986	2025-09-15 13:14:00	10	15	3	2	0	5	\N	\N
+1987	2025-09-15 13:19:00	2	3	6	10	0	1	\N	L
+1988	2025-09-15 13:21:00	6	10	15	8	3	0	\N	\N
+1991	2025-09-16 12:17:00	6	15	1	10	3	1	\N	\N
+1992	2025-09-16 12:23:00	11	10	1	16	1	3	\N	L
+1993	2025-09-16 12:24:00	8	4	6	15	3	0	\N	\N
+1994	2025-09-16 12:32:00	8	4	11	10	3	1	\N	\N
+1995	2025-09-16 12:34:00	3	5	16	1	2	4	\N	\N
+1996	2025-09-16 12:35:00	16	1	5	3	3	2	\N	\N
+1997	2025-09-16 12:42:00	16	1	15	6	3	1	\N	\N
+1998	2025-09-16 12:43:00	8	4	2	13	2	6	\N	C
+2002	2025-09-16 12:47:00	13	2	11	10	3	0	\N	\N
+2006	2025-09-16 12:54:00	5	3	1	16	2	3	\N	\N
+2007	2025-09-16 12:54:00	1	16	5	3	3	2	\N	\N
+2008	2025-09-16 12:54:00	13	2	8	4	1	3	\N	\N
+2009	2025-09-16 12:55:00	6	10	1	16	3	0	\N	L
+2013	2025-09-16 13:02:00	1	2	11	3	1	3	\N	\N
+2014	2025-09-16 13:05:00	13	5	6	10	3	2	\N	\N
+2016	2025-09-16 13:07:00	13	5	10	6	4	1	\N	\N
+2017	2025-09-16 13:09:00	3	11	2	1	3	0	\N	\N
+2010	2025-09-16 12:56:00	11	3	8	4	4	0	\N	C
+2024	2025-09-17 12:16:00	2	15	6	18	0	3	\N	\N
+2025	2025-09-17 12:19:00	11	1	6	18	0	3	\N	L
+2026	2025-09-17 12:22:00	8	15	2	13	2	3	\N	L
+2027	2025-09-17 12:24:00	2	13	4	15	3	0	\N	L
+2028	2025-09-17 12:24:00	11	1	6	18	0	4	\N	\N
+2029	2025-09-17 12:28:00	6	18	4	15	0	0	2	\N
+2030	2025-09-17 12:30:00	8	10	13	2	0	3	\N	\N
+2031	2025-09-17 12:31:00	4	15	1	11	0	3	\N	L
+2032	2025-09-17 12:37:00	1	11	10	8	1	3	\N	\N
+2035	2025-09-17 12:40:00	6	18	2	13	3	2	\N	\N
+2036	2025-09-17 12:43:00	6	18	1	11	0	1	3	\N
+2038	2025-09-17 12:45:00	10	8	1	11	0	0	1	\N
+2039	2025-09-17 12:51:00	18	6	2	13	2	3	\N	\N
+2040	2025-09-17 12:54:00	1	11	15	8	3	1	\N	\N
+2041	2025-09-17 12:57:00	2	13	4	10	3	0	\N	\N
+2044	2025-09-17 13:01:00	6	8	1	11	2	4	\N	L
+2045	2025-09-17 13:02:00	2	13	10	5	0	3	\N	\N
+2046	2025-09-17 13:02:00	4	10	15	2	0	3	\N	\N
+2048	2025-09-17 13:03:00	1	11	6	13	3	0	\N	L
+2049	2025-09-17 13:06:00	15	2	10	5	0	3	\N	L
+2050	2025-09-17 13:07:00	1	11	13	6	0	1	1	\N
+2051	2025-09-17 13:19:00	13	6	10	2	1	3	\N	\N
+2053	2025-09-18 12:23:00	8	1	11	2	0	3	\N	\N
+2054	2025-09-18 12:35:00	11	2	4	6	4	2	\N	\N
+2055	2025-09-18 12:35:00	1	8	3	13	3	2	\N	\N
+2059	2025-09-18 12:40:00	4	6	11	2	3	0	\N	\N
+2061	2025-09-18 12:44:00	1	8	13	3	3	2	\N	L
+2063	2025-09-18 12:51:00	3	2	1	8	1	5	\N	C
+2066	2025-09-18 12:57:00	1	8	10	13	3	1	\N	\N
+2067	2025-09-18 13:00:00	1	8	2	11	0	3	\N	\N
+2069	2025-09-18 13:07:00	13	10	11	2	2	2	1	\N
+2070	2025-09-18 13:11:00	1	3	2	13	0	3	\N	L
+2062	2025-09-18 12:48:00	11	10	4	6	5	2	\N	L
+2075	2025-09-22 12:17:00	2	13	14	6	3	2	\N	\N
+2076	2025-09-22 12:21:00	1	8	4	6	0	3	\N	\N
+2078	2025-09-22 12:27:00	11	5	2	15	3	2	\N	\N
+2080	2025-09-22 12:28:00	6	4	13	3	3	1	\N	L
+2081	2025-09-22 12:29:00	1	14	11	5	3	0	\N	L
+2082	2025-09-22 12:30:00	8	2	6	4	3	0	\N	L
+2083	2025-09-22 12:33:00	1	14	13	3	0	0	4	\N
+2085	2025-09-22 12:38:00	11	5	2	8	3	2	\N	\N
+2087	2025-09-22 12:42:00	3	13	5	11	0	5	\N	L
+2088	2025-09-22 12:43:00	1	14	6	4	3	2	\N	\N
+2090	2025-09-22 12:47:00	1	14	2	3	3	0	\N	\N
+2091	2025-09-22 12:49:00	8	15	5	11	0	3	\N	\N
+2093	2025-09-22 12:52:00	5	11	2	3	1	0	2	\N
+2096	2025-09-22 13:03:00	5	11	6	13	3	0	\N	\N
+2097	2025-09-22 13:04:00	3	2	15	8	0	3	\N	\N
+2099	2025-09-22 13:12:00	13	2	3	1	0	3	\N	L
+2100	2025-09-22 13:13:00	3	1	2	5	3	0	3	L
+2101	2025-09-22 13:22:00	3	1	2	13	2	3	\N	\N
+2102	2025-09-22 13:27:00	2	13	3	1	0	4	\N	L
+2103	2025-09-22 13:37:00	3	1	2	13	2	4	\N	\N
+2115	2025-09-23 07:35:00	2	1	13	6	0	3	\N	L
+2116	2025-09-23 07:40:00	13	6	2	11	0	3	\N	\N
+2117	2025-09-23 07:50:00	2	11	13	1	2	3	\N	\N
+2118	2025-09-23 07:53:00	13	1	6	11	4	0	\N	C
+2119	2025-09-23 08:02:00	13	1	2	11	1	4	\N	\N
+2120	2025-09-23 08:04:00	2	11	13	6	4	0	\N	C
+2121	2025-09-23 08:11:00	2	11	13	1	3	0	\N	\N
+2122	2025-09-23 08:17:00	13	6	2	11	3	0	\N	\N
+2123	2025-09-23 08:20:00	13	6	2	11	0	1	1	\N
+2124	2025-09-23 08:25:00	2	11	13	6	3	0	\N	\N
+2125	2025-09-23 08:32:00	2	11	6	13	3	0	\N	\N
+2126	2025-09-23 08:37:00	2	11	1	6	3	0	\N	\N
+2127	2025-09-23 08:46:00	2	11	6	13	2	3	\N	\N
+2128	2025-09-23 08:52:00	6	13	1	11	0	5	\N	L
+2129	2025-09-23 08:53:00	1	11	6	2	3	0	\N	L
+2130	2025-09-23 09:02:00	1	11	13	6	3	1	\N	\N
+2131	2025-09-23 09:07:00	1	11	3	2	3	0	\N	L
+2132	2025-09-23 09:14:00	1	11	13	6	1	4	\N	\N
+2133	2025-09-23 12:17:00	6	2	1	11	0	3	\N	L
+2134	2025-09-23 12:17:00	6	2	11	8	3	0	\N	L
+2135	2025-09-23 12:26:00	8	2	1	11	1	3	\N	\N
+2136	2025-09-23 12:31:00	1	11	6	3	0	3	\N	\N
+2137	2025-09-23 12:37:00	2	15	5	8	2	3	\N	\N
+2138	2025-09-23 12:39:00	13	11	6	3	1	3	\N	\N
+2139	2025-09-23 12:42:00	6	3	11	15	3	0	\N	L
+2142	2025-09-23 12:42:00	8	5	1	2	0	3	\N	\N
+2145	2025-09-23 12:48:00	11	13	6	3	3	1	\N	\N
+2146	2025-09-23 12:50:00	11	13	3	5	3	0	\N	L
+2148	2025-09-23 12:51:00	8	15	1	2	2	3	\N	\N
+2149	2025-09-23 12:56:00	11	13	6	3	1	3	\N	L
+2150	2025-09-23 12:56:00	15	5	1	2	0	3	\N	\N
+2152	2025-09-23 13:00:00	1	2	8	5	0	3	\N	\N
+2153	2025-09-23 13:02:00	2	1	13	5	3	0	\N	L
+2155	2025-09-23 13:04:00	3	6	11	15	2	2	3	\N
+2161	2025-09-24 12:22:00	6	11	2	1	2	2	3	\N
+2163	2025-09-24 12:30:00	11	6	1	8	1	3	\N	\N
+2164	2025-09-24 12:31:00	18	3	4	2	0	3	\N	\N
+2166	2025-09-24 12:42:00	15	16	1	8	3	2	\N	\N
+2167	2025-09-24 12:43:00	2	4	6	13	2	3	\N	\N
+2169	2025-09-24 12:48:00	6	13	11	3	0	3	\N	\N
+2171	2025-09-24 12:51:00	4	18	15	16	1	3	\N	\N
+2172	2025-09-24 12:56:00	3	11	1	2	3	1	\N	\N
+2173	2025-09-24 12:58:00	6	2	3	11	3	0	\N	L
+2174	2025-09-24 13:01:00	6	2	3	11	0	4	\N	L
+2177	2025-09-24 13:04:00	3	1	2	11	3	0	\N	L
+2178	2025-09-24 13:05:00	3	1	6	11	0	0	4	\N
+2179	2025-09-24 13:06:00	15	16	13	4	2	3	\N	\N
+2183	2025-09-25 12:17:00	1	6	8	2	4	1	\N	C
+2184	2025-09-25 12:20:00	1	6	8	11	0	3	\N	L
+2186	2025-09-25 12:26:00	11	8	3	5	3	0	\N	\N
+2187	2025-09-25 12:29:00	11	8	5	3	3	0	\N	L
+2188	2025-09-25 12:33:00	15	1	6	2	2	3	\N	\N
+2191	2025-09-25 12:40:00	11	8	5	3	3	2	\N	\N
+2192	2025-09-25 12:41:00	1	4	6	2	3	1	\N	\N
+2194	2025-09-25 12:47:00	11	8	5	15	1	4	\N	L
+2196	2025-09-25 12:51:00	3	2	4	1	3	0	\N	\N
+2198	2025-09-25 12:53:00	11	6	5	15	3	0	\N	\N
+2200	2025-09-25 12:58:00	8	4	3	2	3	1	\N	\N
+2201	2025-09-25 13:02:00	11	6	3	1	3	0	\N	L
+2202	2025-09-25 13:02:00	1	3	11	6	0	3	\N	L
+2203	2025-09-25 13:02:00	8	4	2	15	0	5	\N	L
+2204	2025-09-25 13:08:00	11	6	1	2	2	4	\N	C
+2206	2025-09-25 13:15:00	1	3	8	2	0	3	\N	L
+2214	2025-09-29 12:21:00	1	18	2	6	2	3	\N	L
+2215	2025-09-29 12:21:00	3	8	11	15	4	0	\N	C
+2217	2025-09-29 12:27:00	3	8	11	15	0	3	\N	\N
+2218	2025-09-29 12:31:00	18	8	6	2	3	2	\N	\N
+2219	2025-09-29 12:35:00	11	15	3	5	0	3	\N	\N
+2220	2025-09-29 12:36:00	2	8	1	18	3	0	\N	L
+2223	2025-09-29 12:43:00	3	5	11	6	3	1	\N	\N
+2225	2025-09-29 12:54:00	6	15	2	8	3	1	\N	\N
+2227	2025-09-29 12:56:00	1	11	3	5	3	2	\N	\N
+2228	2025-09-29 13:02:00	1	11	8	5	0	3	\N	\N
+2230	2025-09-29 13:08:00	6	15	2	3	1	3	\N	\N
+2241	2025-09-30 12:19:00	2	15	11	18	1	5	\N	L
+2242	2025-09-30 12:26:00	13	8	1	4	1	1	2	\N
+2245	2025-09-30 12:32:00	1	4	5	3	0	3	\N	\N
+2243	2025-09-30 12:26:00	11	18	2	15	5	0	\N	L
+2247	2025-09-30 12:39:00	11	18	6	13	2	3	\N	\N
+2248	2025-09-30 12:40:00	8	2	5	3	4	0	\N	\N
+2250	2025-09-30 12:43:00	4	15	6	13	3	0	\N	\N
+2251	2025-09-30 12:49:00	1	18	2	8	1	3	\N	\N
+2253	2025-09-30 12:53:00	11	5	13	6	4	2	\N	L
+2254	2025-09-30 12:53:00	2	8	6	3	0	1	4	\N
+2256	2025-09-30 12:58:00	6	18	8	2	0	3	\N	\N
+2257	2025-09-30 13:02:00	11	5	1	4	1	3	\N	\N
+2260	2025-09-30 13:08:00	1	4	6	3	0	4	\N	L
+2261	2025-09-30 13:08:00	2	8	15	13	3	1	\N	\N
+2265	2025-10-01 12:11:00	11	15	6	18	3	0	\N	L
+2266	2025-10-01 12:11:00	11	15	18	6	3	0	\N	L
+2267	2025-10-01 12:17:00	11	15	1	2	0	3	\N	\N
+2270	2025-10-01 12:26:00	1	2	11	3	4	2	\N	\N
+2271	2025-10-01 12:27:00	4	8	18	6	1	3	\N	\N
+2273	2025-10-01 12:29:00	6	18	16	3	4	0	\N	C
+2274	2025-10-01 12:34:00	18	6	4	11	0	4	\N	L
+2275	2025-10-01 12:37:00	2	1	5	15	3	2	\N	\N
+2277	2025-10-01 12:37:00	8	3	11	4	0	3	\N	L
+2279	2025-10-01 12:40:00	6	13	11	4	3	0	\N	L
+2282	2025-10-01 12:47:00	16	18	1	2	3	2	\N	\N
+2283	2025-10-01 12:50:00	5	15	6	13	2	3	\N	\N
+2286	2025-10-01 12:58:00	6	13	11	4	3	0	\N	\N
+2288	2025-10-01 13:06:00	3	8	5	15	1	3	\N	\N
+2289	2025-10-01 13:07:00	2	1	6	13	1	3	\N	\N
+2292	2025-10-01 13:15:00	16	4	5	15	3	2	\N	\N
+2293	2025-10-01 13:18:00	3	1	6	13	3	2	\N	\N
+2294	2025-10-02 09:03:00	18	6	2	15	0	1	1	\N
+2295	2025-10-02 12:17:00	2	11	18	6	3	0	\N	\N
+2296	2025-10-02 12:18:00	8	1	4	10	3	0	\N	L
+2297	2025-10-02 12:19:00	2	11	18	6	0	3	\N	L
+2299	2025-10-02 12:24:00	18	6	15	16	0	3	\N	L
+2300	2025-10-02 12:27:00	8	1	10	4	1	3	\N	\N
+2301	2025-10-02 12:32:00	11	2	16	15	1	3	\N	\N
+2303	2025-10-02 12:36:00	10	4	5	3	1	3	\N	\N
+2304	2025-10-02 12:39:00	5	3	18	1	4	0	\N	C
+2305	2025-10-02 12:40:00	16	15	10	11	3	0	\N	L
+2306	2025-10-02 12:44:00	16	15	1	18	0	3	\N	L
+2307	2025-10-02 12:48:00	5	3	2	8	3	1	\N	\N
+2311	2025-10-02 12:51:00	6	13	1	18	3	1	\N	L
+2313	2025-10-02 12:56:00	10	11	5	3	3	1	\N	\N
+2314	2025-10-02 12:57:00	10	11	6	1	0	0	2	\N
+2317	2025-10-02 13:06:00	6	1	13	3	4	1	\N	L
+2318	2025-10-02 13:07:00	5	2	16	15	3	2	\N	\N
+2320	2025-10-02 13:13:00	1	6	10	11	3	2	\N	\N
+2332	2025-10-06 12:16:00	18	6	15	2	3	0	\N	\N
+2333	2025-10-06 12:21:00	10	11	1	6	0	3	\N	\N
+2336	2025-10-06 12:23:00	5	15	18	6	0	3	\N	\N
+2337	2025-10-06 12:25:00	2	3	1	11	4	1	\N	C
+2338	2025-10-06 12:30:00	10	8	18	6	1	3	\N	\N
+2341	2025-10-06 12:36:00	11	1	6	18	0	5	\N	L
+2343	2025-10-06 12:38:00	3	2	15	5	3	2	\N	\N
+2345	2025-10-06 12:40:00	8	13	6	18	0	4	\N	L
+2348	2025-10-06 12:47:00	1	10	3	2	1	3	\N	\N
+2349	2025-10-06 12:47:00	6	18	11	5	0	3	\N	\N
+2352	2025-10-06 12:55:00	5	11	8	15	3	2	\N	\N
+2353	2025-10-06 12:56:00	5	11	10	18	3	0	\N	L
+2354	2025-10-06 12:59:00	3	2	13	6	3	2	\N	\N
+2355	2025-10-06 13:00:00	11	5	8	1	0	4	\N	C
+2357	2025-10-06 13:04:00	13	6	1	8	0	3	\N	\N
+2358	2025-10-06 13:05:00	15	10	2	3	0	3	\N	\N
+2359	2025-10-06 13:10:00	1	8	6	13	0	3	\N	\N
+2361	2025-10-06 13:10:00	2	3	15	10	2	3	\N	L
+2366	2025-10-07 12:18:00	15	18	14	8	1	3	\N	\N
+2367	2025-10-07 12:21:00	2	11	1	3	0	3	\N	\N
+2368	2025-10-07 12:28:00	13	5	14	8	2	3	\N	\N
+2371	2025-10-07 12:31:00	18	15	3	1	2	3	\N	\N
+2372	2025-10-07 12:32:00	10	2	14	8	3	0	\N	\N
+2373	2025-10-07 12:35:00	11	5	1	3	0	4	\N	L
+2375	2025-10-07 12:38:00	10	2	13	18	3	1	\N	\N
+2376	2025-10-07 12:41:00	14	8	1	3	5	0	\N	C
+2378	2025-10-07 12:43:00	11	5	10	2	0	3	\N	\N
+2379	2025-10-07 12:47:00	8	14	13	18	0	3	\N	\N
+2381	2025-10-07 12:51:00	1	15	10	2	1	3	\N	\N
+2382	2025-10-07 12:53:00	3	5	13	18	2	0	1	\N
+2383	2025-10-07 12:55:00	10	2	11	8	3	0	\N	\N
+2385	2025-10-07 13:01:00	10	13	1	15	0	3	\N	\N
+2386	2025-10-07 13:03:00	1	15	13	11	0	3	\N	L
+2404	2025-10-08 12:14:00	6	14	8	2	1	3	\N	\N
+2406	2025-10-08 12:25:00	1	3	11	10	0	3	\N	L
+2407	2025-10-08 12:26:00	6	13	14	15	3	0	\N	\N
+2409	2025-10-08 12:31:00	2	8	11	10	3	0	\N	\N
+2411	2025-10-08 12:36:00	1	3	13	6	3	1	\N	\N
+2413	2025-10-08 12:45:00	2	8	11	10	3	2	\N	\N
+2414	2025-10-08 12:48:00	14	15	1	3	2	3	\N	\N
+2415	2025-10-08 12:51:00	6	13	8	2	0	3	\N	\N
+2417	2025-10-08 12:59:00	11	10	1	3	5	2	\N	L
+2419	2025-10-08 12:59:00	6	15	2	7	2	3	\N	\N
+2421	2025-10-08 13:04:00	13	7	1	3	1	3	\N	L
+2422	2025-10-08 13:16:00	1	3	13	7	2	5	\N	L
+2538	2025-10-16 12:43:00	15	14	1	2	3	2	\N	\N
+2405	2025-10-08 12:23:00	8	2	1	11	1	3	\N	\N
+2428	2025-10-09 12:17:00	14	2	6	18	0	3	\N	\N
+2430	2025-10-09 12:20:00	6	18	2	11	0	1	2	\N
+2431	2025-10-09 12:25:00	8	4	1	15	1	3	\N	\N
+2433	2025-10-09 12:26:00	11	2	13	14	1	4	\N	C
+2436	2025-10-09 12:33:00	10	5	1	15	3	1	\N	\N
+2437	2025-10-09 12:34:00	16	6	13	14	3	2	\N	\N
+2438	2025-10-09 12:43:00	16	6	1	2	0	3	\N	L
+2439	2025-10-09 12:49:00	15	13	1	2	3	1	\N	L
+2441	2025-10-09 12:53:00	18	14	5	10	4	0	\N	L
+2442	2025-10-09 12:54:00	5	10	4	8	3	0	4	\N
+2443	2025-10-09 12:56:00	3	11	13	15	3	0	\N	\N
+2445	2025-10-09 13:01:00	14	18	16	6	2	1	1	\N
+2446	2025-10-09 13:04:00	1	2	11	3	3	0	\N	\N
+2447	2025-10-09 13:07:00	1	2	13	15	0	3	\N	\N
+2448	2025-10-09 13:08:00	16	6	5	10	3	1	\N	\N
+2449	2025-10-09 13:09:00	16	6	2	1	0	0	3	\N
+2454	2025-10-13 12:13:00	15	10	2	18	3	0	\N	\N
+2455	2025-10-13 12:16:00	15	10	1	6	3	0	\N	\N
+2456	2025-10-13 12:18:00	2	18	5	8	3	0	\N	L
+2457	2025-10-13 12:21:00	6	1	15	10	0	1	3	\N
+2458	2025-10-13 12:26:00	8	5	2	18	1	3	\N	\N
+2459	2025-10-13 12:32:00	2	18	15	10	3	1	\N	\N
+2460	2025-10-13 12:32:00	1	6	13	3	2	3	\N	\N
+2461	2025-10-13 12:32:00	13	3	8	5	0	0	3	\N
+2462	2025-10-13 12:38:00	1	6	13	3	4	0	\N	L
+2463	2025-10-13 12:41:00	2	18	5	8	3	1	\N	\N
+2464	2025-10-13 12:46:00	1	6	15	10	1	3	\N	\N
+2465	2025-10-13 12:50:00	13	3	2	18	1	3	\N	\N
+2466	2025-10-13 12:53:00	5	8	10	15	1	4	\N	L
+2467	2025-10-13 12:57:00	18	2	1	6	3	0	\N	\N
+2468	2025-10-13 13:01:00	13	3	10	15	4	2	\N	L
+2470	2025-10-13 13:03:00	2	1	8	5	0	3	\N	\N
+2471	2025-10-13 13:07:00	10	6	13	3	0	3	\N	\N
+2472	2025-10-13 13:08:00	8	5	2	1	0	3	\N	\N
+2475	2025-10-13 13:15:00	6	10	15	13	3	1	\N	\N
+2476	2025-10-13 13:15:00	2	1	8	3	1	5	\N	L
+2482	2025-10-14 12:17:00	8	15	18	2	0	3	\N	\N
+2483	2025-10-14 12:24:00	18	2	6	15	3	0	\N	\N
+2484	2025-10-14 12:30:00	18	2	15	6	3	1	\N	\N
+2485	2025-10-14 12:37:00	18	2	7	6	0	3	\N	\N
+2486	2025-10-14 12:39:00	8	3	1	16	0	3	\N	\N
+2487	2025-10-14 12:39:00	7	6	18	2	0	3	\N	L
+2488	2025-10-14 12:48:00	7	6	18	2	3	1	\N	\N
+2489	2025-10-14 12:49:00	16	1	3	8	3	2	\N	\N
+2490	2025-10-14 12:53:00	1	16	8	2	4	1	\N	C
+2491	2025-10-14 12:55:00	18	15	7	6	0	3	\N	\N
+2492	2025-10-14 12:59:00	16	1	3	2	0	3	\N	\N
+2493	2025-10-14 13:03:00	15	8	7	6	3	1	\N	\N
+2494	2025-10-14 13:09:00	1	16	3	2	1	3	\N	\N
+2495	2025-10-14 13:11:00	3	2	18	1	3	0	\N	L
+2497	2025-10-14 13:20:00	3	2	16	1	3	2	\N	\N
+2512	2025-10-15 12:12:00	6	15	1	8	3	0	\N	L
+2513	2025-10-15 12:23:00	14	18	16	15	0	4	\N	C
+2514	2025-10-15 12:25:00	2	8	3	13	3	0	\N	\N
+2515	2025-10-15 12:34:00	2	8	18	14	3	1	\N	\N
+2516	2025-10-15 12:35:00	16	15	3	13	1	3	\N	L
+2517	2025-10-15 12:36:00	6	15	2	8	1	3	\N	\N
+2518	2025-10-15 12:40:00	2	8	16	10	3	1	\N	L
+2519	2025-10-15 12:42:00	18	14	3	13	0	3	\N	\N
+2520	2025-10-15 12:44:00	1	15	2	8	3	1	\N	L
+2521	2025-10-15 12:50:00	16	10	3	13	1	3	\N	L
+2522	2025-10-15 12:51:00	18	14	1	15	0	5	\N	L
+2523	2025-10-15 12:55:00	2	8	13	3	3	0	\N	\N
+2524	2025-10-15 13:00:00	10	5	1	15	1	3	\N	\N
+2525	2025-10-15 13:02:00	15	1	10	3	3	0	\N	L
+2526	2025-10-15 13:03:00	2	8	16	13	5	1	\N	L
+2528	2025-10-15 13:09:00	2	8	15	1	3	0	\N	\N
+2532	2025-10-16 12:22:00	15	14	18	8	2	3	\N	\N
+2533	2025-10-16 12:27:00	18	8	2	1	0	4	\N	\N
+2534	2025-10-16 12:32:00	14	15	13	5	1	3	\N	\N
+2535	2025-10-16 12:34:00	1	2	3	10	3	0	\N	\N
+2536	2025-10-16 12:37:00	18	8	13	5	0	4	\N	L
+2539	2025-10-16 12:44:00	3	10	13	5	5	0	\N	L
+2541	2025-10-16 12:46:00	3	10	18	2	4	0	\N	C
+2543	2025-10-16 12:57:00	3	10	5	2	1	3	\N	\N
+2545	2025-10-16 13:04:00	2	5	15	13	4	0	\N	\N
+2547	2025-10-16 13:06:00	1	3	8	6	5	0	\N	L
+2548	2025-10-16 13:14:00	3	1	15	8	2	4	\N	C
+2556	2025-10-20 12:15:00	2	8	14	6	3	0	\N	\N
+2557	2025-10-20 12:19:00	2	8	6	4	0	3	\N	\N
+2558	2025-10-20 12:25:00	6	4	3	11	4	0	\N	L
+2559	2025-10-20 12:27:00	14	5	2	8	0	3	\N	\N
+2560	2025-10-20 12:31:00	2	8	3	5	0	3	\N	\N
+2561	2025-10-20 12:34:00	3	5	14	10	4	0	\N	C
+2562	2025-10-20 12:35:00	15	11	6	4	3	1	\N	\N
+2563	2025-10-20 12:37:00	15	11	2	8	0	4	\N	\N
+2564	2025-10-20 12:46:00	14	10	2	8	3	2	\N	\N
+2565	2025-10-20 12:51:00	14	10	2	8	3	0	\N	\N
+2566	2025-10-20 12:52:00	3	5	4	15	3	0	\N	\N
+2567	2025-10-20 12:57:00	8	2	14	10	6	1	\N	C
+2569	2025-10-20 12:58:00	7	4	3	5	4	0	\N	\N
+2572	2025-10-20 13:02:00	2	8	15	11	3	0	\N	\N
+2574	2025-10-20 13:07:00	6	10	7	4	3	2	\N	\N
+2575	2025-10-20 13:09:00	2	8	3	5	4	1	\N	L
+2579	2025-10-21 12:15:00	2	8	11	14	3	0	\N	L
+2580	2025-10-21 12:16:00	2	8	11	14	0	3	\N	L
+2581	2025-10-21 12:23:00	11	14	2	5	3	0	\N	\N
+2582	2025-10-21 12:28:00	2	4	14	11	4	1	\N	L
+2583	2025-10-21 12:32:00	2	4	11	14	4	0	\N	L
+2587	2025-10-21 12:40:00	2	4	14	11	3	1	\N	\N
+2588	2025-10-21 12:48:00	11	14	2	4	3	0	\N	\N
+2591	2025-10-21 12:57:00	11	14	2	4	3	1	\N	\N
+2594	2025-10-21 13:07:00	2	4	15	11	0	5	\N	L
+2596	2025-10-21 13:12:00	15	11	8	2	0	3	\N	L
+2598	2025-10-22 12:26:00	8	16	14	4	2	3	\N	\N
+2599	2025-10-22 12:28:00	11	15	5	2	3	2	\N	\N
+2600	2025-10-22 12:29:00	14	16	5	2	2	3	\N	\N
+2602	2025-10-22 12:35:00	8	16	11	15	3	1	\N	\N
+2604	2025-10-22 12:35:00	14	4	10	3	1	4	\N	L
+2605	2025-10-22 12:39:00	2	4	8	16	0	0	3	\N
+2607	2025-10-22 12:42:00	6	5	10	3	3	1	\N	\N
+2608	2025-10-22 12:46:00	8	16	6	5	1	3	\N	\N
+2609	2025-10-22 12:48:00	15	11	2	4	1	3	\N	\N
+2610	2025-10-22 12:51:00	3	10	6	5	4	2	\N	L
+2612	2025-10-22 12:52:00	8	16	2	4	0	4	\N	\N
+2613	2025-10-22 12:55:00	2	4	6	5	0	0	2	\N
+2614	2025-10-22 12:56:00	16	8	5	6	0	4	\N	C
+2615	2025-10-22 12:58:00	11	15	10	2	1	5	\N	C
+2617	2025-10-22 12:58:00	6	5	2	8	0	3	\N	L
+2618	2025-10-23 12:16:00	2	6	15	8	2	5	\N	C
+2620	2025-10-23 12:26:00	15	8	2	11	1	3	\N	\N
+2621	2025-10-23 12:46:00	2	11	15	8	3	0	\N	\N
+2624	2025-10-23 13:01:00	15	8	11	2	0	3	\N	\N
+2626	2025-10-27 12:13:00	2	8	6	5	0	4	\N	C
+2627	2025-10-27 12:13:00	6	5	8	14	3	0	\N	L
+2629	2025-10-27 12:19:00	14	8	3	10	4	0	\N	C
+2630	2025-10-27 12:19:00	2	11	6	5	3	1	\N	\N
+2633	2025-10-27 12:26:00	10	3	14	8	3	1	\N	\N
+2634	2025-10-27 12:29:00	10	3	8	14	0	3	\N	L
+2636	2025-10-27 12:31:00	8	14	10	3	0	3	\N	L
+2638	2025-10-27 12:40:00	10	8	3	14	3	2	\N	\N
+2639	2025-10-27 12:40:00	6	5	11	2	3	2	\N	\N
+2640	2025-10-27 12:45:00	6	5	11	2	3	1	\N	\N
+2642	2025-10-27 12:46:00	10	8	14	3	3	1	\N	\N
+2643	2025-10-27 12:51:00	8	10	3	14	0	3	\N	\N
+2644	2025-10-27 12:52:00	11	2	6	5	3	1	\N	\N
+2647	2025-10-27 12:58:00	10	15	3	14	3	1	\N	\N
+2648	2025-10-27 13:01:00	8	6	11	2	2	3	\N	\N
+2649	2025-10-28 12:17:00	1	2	13	14	1	5	\N	L
+2650	2025-10-28 12:18:00	8	4	6	15	0	3	\N	L
+2651	2025-10-28 12:21:00	13	14	1	2	0	4	\N	L
+2652	2025-10-28 12:21:00	6	15	4	8	4	0	\N	C
+2655	2025-10-28 12:30:00	1	2	5	13	1	3	\N	\N
+2656	2025-10-28 12:31:00	3	8	6	15	3	1	\N	\N
+2658	2025-10-28 12:37:00	6	2	8	3	1	1	4	\N
+2659	2025-10-28 12:39:00	6	2	3	8	0	4	\N	C
+2661	2025-10-28 12:43:00	13	4	1	10	3	2	\N	\N
+2663	2025-10-28 12:50:00	13	4	1	10	0	4	\N	C
+2664	2025-10-28 12:50:00	3	8	6	2	2	3	\N	\N
+2666	2025-10-28 12:56:00	13	15	10	1	4	1	\N	L
+2671	2025-10-29 12:16:00	8	35	6	5	5	0	\N	L
+2673	2025-10-29 12:23:00	8	11	5	15	3	0	\N	\N
+2674	2025-10-29 12:31:00	8	11	1	6	3	1	\N	\N
+2676	2025-10-29 12:32:00	3	4	5	15	4	1	\N	L
+2680	2025-10-29 12:36:00	8	11	1	14	3	0	\N	\N
+2682	2025-10-29 12:41:00	8	11	5	14	1	5	\N	C
+2683	2025-10-29 12:43:00	4	3	6	15	1	3	\N	\N
+2685	2025-10-29 12:51:00	8	1	5	14	2	3	\N	\N
+2686	2025-10-29 12:53:00	6	15	3	11	3	1	\N	\N
+2689	2025-10-29 13:01:00	6	11	3	8	4	1	\N	C
+2691	2025-10-29 13:04:00	1	4	5	15	6	0	\N	C
+2692	2025-10-30 12:14:00	1	14	13	6	1	3	\N	L
+2694	2025-10-30 12:19:00	13	6	1	14	4	0	\N	\N
+2695	2025-10-30 12:23:00	13	6	10	3	0	4	\N	L
+2696	2025-10-30 12:24:00	2	8	11	15	2	3	\N	\N
+2697	2025-10-30 12:26:00	11	15	13	6	3	0	\N	L
+2698	2025-10-30 12:30:00	11	15	8	2	3	0	\N	\N
+2699	2025-10-30 12:36:00	10	3	1	14	2	3	\N	\N
+2703	2025-10-30 12:39:00	11	15	6	13	2	4	\N	C
+2705	2025-10-30 12:46:00	2	8	1	14	2	3	\N	\N
+2707	2025-10-30 12:56:00	1	14	3	10	2	3	\N	\N
+2709	2025-10-30 12:57:00	13	6	11	15	2	3	\N	\N
+2716	2025-11-03 12:13:00	11	2	6	15	3	0	\N	\N
+2718	2025-11-03 12:21:00	11	2	6	15	3	1	\N	\N
+2719	2025-11-03 12:24:00	11	2	8	14	3	0	\N	\N
+2721	2025-11-03 12:25:00	11	2	8	14	0	4	\N	C
+2722	2025-11-03 12:31:00	6	3	10	15	3	1	\N	\N
+2723	2025-11-03 12:33:00	8	14	11	2	1	3	\N	\N
+2725	2025-11-03 12:37:00	15	10	6	3	4	0	\N	L
+2726	2025-11-03 12:39:00	11	2	8	14	3	1	\N	\N
+2728	2025-11-03 12:45:00	11	2	8	14	3	0	\N	\N
+2729	2025-11-03 12:45:00	15	10	6	3	3	2	\N	\N
+2731	2025-11-03 12:49:00	15	10	6	3	3	0	\N	L
+2733	2025-11-03 12:51:00	11	2	8	14	2	3	\N	\N
+2734	2025-11-03 12:54:00	6	3	10	15	0	3	\N	\N
+2737	2025-11-03 13:01:00	8	14	11	2	3	2	\N	\N
+2742	2025-11-04 12:23:00	6	15	2	18	1	3	\N	\N
+2743	2025-11-04 12:29:00	4	13	8	16	4	1	\N	L
+2744	2025-11-04 12:32:00	6	15	2	18	3	1	\N	\N
+2746	2025-11-04 12:40:00	6	15	2	8	3	1	\N	\N
+2748	2025-11-04 12:41:00	10	16	13	4	3	1	\N	\N
+2749	2025-11-04 12:43:00	10	16	18	4	3	0	\N	\N
+2751	2025-11-04 12:49:00	8	13	6	15	1	3	\N	\N
+2752	2025-11-04 12:50:00	4	2	10	16	3	1	\N	\N
+2754	2025-11-04 12:52:00	18	8	6	15	0	3	\N	\N
+2755	2025-11-04 12:56:00	13	16	4	2	3	1	\N	\N
+2757	2025-11-04 13:01:00	18	10	6	8	3	1	\N	L
+2758	2025-11-04 13:02:00	13	16	4	2	3	1	\N	\N
+2763	2025-11-05 12:25:00	13	2	6	15	3	1	\N	\N
+2765	2025-11-05 12:33:00	15	2	6	8	0	3	\N	\N
+2767	2025-11-05 12:34:00	6	15	13	8	3	0	\N	\N
+2768	2025-11-05 12:34:00	6	8	2	15	3	0	\N	\N
+2769	2025-11-05 12:36:00	6	8	2	13	3	0	\N	\N
+2770	2025-11-05 12:37:00	6	8	16	2	0	0	2	\N
+2772	2025-11-05 12:40:00	16	2	15	6	3	0	\N	\N
+2774	2025-11-05 12:47:00	16	2	6	8	1	3	\N	\N
+2775	2025-11-05 12:54:00	6	8	15	2	3	0	\N	\N
+2778	2025-11-05 12:57:00	6	8	16	2	1	4	\N	C
+2779	2025-11-05 12:59:00	16	2	15	6	4	0	\N	C
+2781	2025-11-06 12:08:00	18	2	8	6	4	0	\N	L
+2782	2025-11-06 12:18:00	18	2	8	5	3	2	\N	\N
+2783	2025-11-06 12:21:00	18	2	14	5	1	0	1	\N
+2785	2025-11-06 12:27:00	8	2	4	14	0	3	\N	\N
+2787	2025-11-06 12:35:00	5	14	18	15	0	3	\N	\N
+2789	2025-11-06 12:38:00	8	2	15	18	0	3	\N	L
+2792	2025-11-06 12:49:00	18	15	8	14	1	3	\N	\N
+2793	2025-11-06 12:50:00	5	14	15	18	3	1	\N	\N
+2795	2025-11-06 12:50:00	5	14	8	2	0	3	\N	L
+2798	2025-11-06 12:56:00	8	2	18	15	3	0	\N	\N
+2801	2025-11-10 12:08:00	8	14	18	6	4	2	\N	C
+2802	2025-11-10 12:13:00	8	14	13	5	0	3	\N	\N
+2806	2025-11-10 12:25:00	18	15	13	5	3	0	\N	\N
+2809	2025-11-10 12:33:00	15	18	8	14	3	1	\N	\N
+2811	2025-11-10 12:44:00	15	18	5	13	2	6	\N	C
+2814	2025-11-10 12:59:00	2	14	8	6	0	3	\N	\N
+2815	2025-11-10 12:59:00	8	6	2	14	0	3	\N	\N
+2816	2025-11-10 12:59:00	2	14	8	6	3	1	\N	\N
+2817	2025-11-10 12:59:00	2	14	6	8	3	0	\N	\N
+2819	2025-11-10 13:02:00	5	13	15	18	2	6	\N	C
+2820	2025-11-11 12:19:00	2	4	6	16	4	0	\N	C
+2821	2025-11-11 12:21:00	13	15	8	5	3	2	\N	\N
+2823	2025-11-11 12:26:00	13	15	8	5	3	0	\N	\N
+2824	2025-11-11 12:29:00	2	4	6	16	3	2	\N	\N
+2825	2025-11-11 12:33:00	13	15	5	8	0	5	\N	L
+2826	2025-11-11 12:35:00	6	16	2	4	3	0	\N	\N
+2830	2025-11-11 12:41:00	5	8	15	13	3	1	\N	\N
+2832	2025-11-11 12:46:00	5	2	6	16	0	3	\N	\N
+2833	2025-11-11 12:48:00	5	8	15	13	3	2	\N	L
+2834	2025-11-11 12:48:00	6	16	4	2	0	3	\N	L
+2838	2025-11-11 12:55:00	13	15	5	8	4	2	\N	\N
+2840	2025-11-11 13:02:00	6	16	4	2	1	4	\N	L
+2841	2025-11-12 12:12:00	5	8	16	15	4	1	\N	C
+2843	2025-11-12 12:16:00	5	8	2	14	0	3	\N	\N
+2844	2025-11-12 12:18:00	15	4	6	16	3	0	\N	\N
+2846	2025-11-12 12:23:00	2	14	5	8	1	5	\N	C
+2848	2025-11-12 12:29:00	5	8	14	2	5	2	\N	L
+2849	2025-11-12 12:30:00	4	15	6	16	1	3	\N	\N
+2851	2025-11-12 12:37:00	5	8	2	14	3	1	\N	\N
+2852	2025-11-12 12:37:00	15	4	6	16	4	0	\N	\N
+2854	2025-11-12 12:39:00	15	4	6	16	3	0	\N	L
+2856	2025-11-12 12:45:00	5	8	2	14	3	1	\N	\N
+2858	2025-11-12 12:51:00	5	8	2	14	3	0	\N	\N
+2859	2025-11-12 12:52:00	6	16	4	15	3	2	\N	\N
+2861	2025-11-12 12:57:00	5	8	2	14	3	0	\N	L
+2863	2025-11-13 12:12:00	5	8	15	2	5	0	\N	C
+2864	2025-11-13 12:17:00	5	8	15	2	4	0	\N	L
+2868	2025-11-13 12:22:00	5	8	2	6	0	3	\N	\N
+2870	2025-11-13 12:32:00	15	6	5	8	2	3	\N	\N
+2872	2025-11-13 12:42:00	5	8	2	6	2	3	\N	\N
+2875	2025-11-13 12:52:00	2	6	15	8	1	3	\N	\N
+2877	2025-11-13 13:05:00	15	8	2	5	4	2	\N	\N
+2878	2025-11-17 12:11:00	6	4	8	2	4	0	\N	C
+2882	2025-11-17 12:18:00	6	4	2	5	1	3	\N	\N
+2884	2025-11-17 12:27:00	2	5	8	15	3	1	\N	\N
+2886	2025-11-17 12:32:00	2	5	4	10	0	4	\N	\N
+2889	2025-11-17 12:41:00	10	4	8	15	3	1	\N	\N
+2891	2025-11-17 12:47:00	10	4	2	5	0	3	\N	\N
+2893	2025-11-17 12:55:00	8	15	5	2	3	1	\N	\N
+2898	2025-11-18 12:11:00	8	15	4	13	3	2	\N	L
+2901	2025-11-18 12:22:00	8	15	2	4	2	3	\N	\N
+2903	2025-11-18 12:30:00	2	4	8	6	3	1	\N	\N
+2905	2025-11-18 12:40:00	2	4	6	15	1	3	\N	\N
+2907	2025-11-18 12:45:00	6	15	2	8	1	3	\N	\N
+2908	2025-11-18 12:49:00	2	8	6	4	1	4	\N	L
+2910	2025-11-18 12:51:00	6	4	2	15	0	4	\N	C
+2912	2025-11-18 12:57:00	6	8	2	15	2	3	\N	L
+2913	2025-11-18 12:59:00	2	15	5	10	4	0	\N	C
+2916	2025-11-18 13:10:00	2	15	4	6	3	0	\N	\N
+2917	2025-11-19 12:22:00	2	8	13	4	1	3	\N	\N
+2919	2025-11-19 12:28:00	13	4	2	8	0	3	\N	\N
+2921	2025-11-19 12:32:00	25	10	4	13	0	3	\N	L
+2922	2025-11-19 12:36:00	2	8	3	15	0	3	\N	\N
+2925	2025-11-19 12:39:00	10	25	4	13	0	3	\N	\N
+2926	2025-11-19 12:44:00	3	15	8	2	3	0	\N	\N
+2928	2025-11-19 12:46:00	3	15	8	2	0	3	\N	L
+2929	2025-11-19 12:47:00	4	13	25	10	0	3	\N	\N
+2932	2025-11-19 12:55:00	25	10	13	15	4	0	\N	\N
+2938	2025-11-20 12:15:00	15	14	8	2	5	0	\N	L
+2942	2025-11-20 12:33:00	15	14	8	13	2	3	\N	\N
+2943	2025-11-20 12:39:00	8	13	2	5	0	3	\N	\N
+2945	2025-11-20 12:41:00	2	5	14	3	3	0	\N	\N
+2948	2025-11-20 12:47:00	15	10	6	8	5	0	\N	L
+2949	2025-11-20 12:49:00	13	14	2	5	5	1	\N	\N
+2950	2025-11-20 12:53:00	8	5	14	13	1	0	3	\N
+2953	2025-11-20 12:59:00	13	2	8	5	3	0	\N	\N
+2955	2025-11-24 12:19:00	13	2	8	5	3	1	\N	\N
+2957	2025-11-24 12:28:00	13	2	6	15	1	3	\N	\N
+2958	2025-11-24 12:32:00	3	16	8	5	4	2	\N	L
+2959	2025-11-24 12:37:00	3	16	2	5	0	3	\N	\N
+2960	2025-11-24 12:39:00	16	8	5	2	3	0	\N	L
+2964	2025-11-24 12:45:00	10	2	6	15	1	3	\N	\N
+2965	2025-11-24 12:47:00	6	15	2	13	4	0	\N	L
+2966	2025-11-24 12:48:00	8	16	3	5	1	3	\N	\N
+2968	2025-11-24 12:57:00	2	16	8	3	3	0	\N	\N
+2971	2025-11-24 13:00:00	10	13	6	15	3	2	\N	\N
+2980	2025-11-26 12:23:00	15	8	6	5	3	2	\N	\N
+2982	2025-11-26 12:27:00	15	8	3	10	0	1	2	\N
+2983	2025-11-26 12:34:00	6	5	10	3	0	3	\N	\N
+2985	2025-11-26 12:40:00	5	15	6	8	3	0	\N	L
+2988	2025-11-26 12:49:00	5	15	10	3	3	1	\N	\N
+2990	2025-11-26 12:53:00	5	15	8	6	0	3	\N	\N
+2994	2025-11-27 12:18:00	8	16	6	3	1	3	\N	\N
+2995	2025-11-27 12:31:00	6	3	15	13	2	3	\N	\N
+2996	2025-11-27 12:38:00	15	13	8	16	4	0	\N	\N
+2997	2025-11-27 12:45:00	6	3	15	13	1	0	3	\N
+2998	2025-11-27 12:49:00	6	3	8	16	3	0	\N	\N
+2999	2025-11-27 12:55:00	6	3	15	13	3	1	\N	\N
+3000	2025-11-27 13:04:00	6	3	8	16	0	4	\N	L
+3001	2025-12-01 12:19:00	8	11	4	3	3	0	\N	\N
+3005	2025-12-01 12:25:00	3	6	8	11	1	1	3	\N
+3009	2025-12-01 12:34:00	3	6	4	15	1	0	1	\N
+3010	2025-12-01 12:39:00	8	11	4	15	1	0	1	\N
+3011	2025-12-01 12:47:00	4	15	3	6	0	3	\N	\N
+3013	2025-12-01 12:52:00	3	6	10	11	0	4	\N	L
+3015	2025-12-01 12:57:00	10	11	8	4	0	5	\N	L
+3022	2025-12-02 12:13:00	8	5	10	15	0	5	\N	C
+3023	2025-12-02 12:14:00	10	15	8	5	4	0	\N	C
+3025	2025-12-02 12:20:00	10	15	5	8	3	0	\N	\N
+3028	2025-12-02 12:24:00	10	15	11	3	5	0	\N	C
+3030	2025-12-02 12:30:00	10	15	5	4	3	0	\N	\N
+3032	2025-12-02 12:45:00	3	8	11	5	4	2	\N	\N
+3035	2025-12-02 12:54:00	3	8	10	4	2	3	\N	\N
+3038	2025-12-02 13:11:00	10	15	3	8	0	4	\N	C
+3041	2025-12-03 12:25:00	1	5	11	4	3	1	\N	\N
+3044	2025-12-03 12:37:00	11	15	1	5	3	0	\N	L
+3043	2025-12-03 12:34:00	1	5	3	4	3	1	\N	\N
+3048	2025-12-03 12:52:00	11	15	4	3	3	2	\N	\N
+3049	2025-12-03 12:58:00	11	15	5	1	0	3	\N	\N
+3051	2025-12-03 13:03:00	11	4	3	1	0	3	\N	\N
+3053	2025-12-04 12:15:00	11	13	1	5	3	0	\N	L
+3054	2025-12-04 12:18:00	11	13	5	1	3	1	\N	L
+3055	2025-12-04 12:28:00	11	13	1	5	3	2	\N	\N
+3056	2025-12-04 12:35:00	11	13	5	15	2	3	\N	L
+3057	2025-12-04 12:39:00	5	15	1	3	4	0	\N	C
+3062	2025-12-04 12:48:00	15	5	11	13	3	1	\N	\N
+3064	2025-12-04 12:56:00	15	5	3	1	1	3	\N	\N
+3066	2025-12-04 12:58:00	3	1	13	11	0	3	\N	L
+3067	2025-12-04 13:01:00	11	13	15	3	4	0	\N	C
+3069	2025-12-04 13:06:00	11	13	1	3	3	1	\N	\N
 \.
 
 
@@ -2492,6 +4045,1210 @@ COPY public.partida_sinuca (id, data_hora, jogador1_id, jogador2_id, placar1, pl
 535	2025-07-01 16:26:00	21	1	4	0	\N
 536	2025-07-01 16:37:00	21	7	1	4	\N
 537	2025-07-01 16:37:00	7	23	3	3	1
+550	2025-07-02 12:26:00	7	23	4	3	\N
+538	2025-07-02 07:24:00	1	15	1	0	2
+539	2025-07-02 07:25:00	1	15	0	0	2
+540	2025-07-02 07:30:00	15	1	4	2	\N
+541	2025-07-02 11:56:00	11	18	4	1	\N
+542	2025-07-02 11:57:00	11	18	2	2	1
+543	2025-07-02 12:00:00	21	18	4	1	\N
+545	2025-07-02 12:17:00	21	1	4	3	\N
+546	2025-07-02 12:17:00	21	11	4	1	\N
+548	2025-07-02 12:19:00	21	7	0	4	\N
+554	2025-07-02 12:30:00	22	7	4	2	\N
+556	2025-07-02 12:36:00	22	21	4	1	\N
+558	2025-07-02 12:42:00	23	22	3	4	2
+559	2025-07-02 12:43:00	7	23	0	0	1
+561	2025-07-02 12:50:00	21	23	3	4	\N
+562	2025-07-02 12:52:00	23	22	1	1	1
+565	2025-07-02 12:59:00	22	7	3	4	\N
+567	2025-07-02 13:11:00	7	21	3	4	\N
+568	2025-07-02 13:12:00	21	6	2	4	\N
+569	2025-07-02 13:20:00	6	23	4	3	2
+570	2025-07-02 16:25:00	1	7	4	0	\N
+571	2025-07-02 16:26:00	1	11	1	0	1
+572	2025-07-02 16:32:00	11	7	4	2	\N
+573	2025-07-03 08:11:00	7	1	3	3	1
+574	2025-07-03 08:14:00	7	1	3	4	\N
+575	2025-07-03 08:18:00	1	7	3	4	\N
+576	2025-07-03 08:22:00	7	1	2	3	1
+577	2025-07-03 08:26:00	1	7	3	4	\N
+578	2025-07-03 08:31:00	7	1	3	4	\N
+579	2025-07-03 08:38:00	1	7	3	4	\N
+580	2025-07-03 08:45:00	7	21	4	1	\N
+581	2025-07-03 08:54:00	7	23	3	4	\N
+582	2025-07-03 08:59:00	23	21	3	1	1
+583	2025-07-03 09:06:00	23	21	1	3	1
+584	2025-07-03 09:11:00	21	23	4	2	\N
+585	2025-07-03 09:17:00	21	23	3	4	\N
+586	2025-07-03 09:23:00	23	21	4	2	\N
+600	2025-07-03 16:29:00	21	7	0	4	\N
+601	2025-07-03 16:35:00	7	1	4	2	\N
+602	2025-07-03 16:42:00	7	21	4	2	\N
+603	2025-07-04 12:00:00	7	1	4	2	\N
+604	2025-07-04 12:08:00	7	22	3	4	\N
+605	2025-07-04 12:16:00	22	23	2	4	\N
+606	2025-07-04 12:19:00	23	7	1	0	1
+607	2025-07-04 12:26:00	7	22	3	4	\N
+608	2025-07-04 12:29:00	22	18	1	4	\N
+609	2025-07-04 12:36:00	18	23	2	4	\N
+610	2025-07-04 12:42:00	23	22	4	2	\N
+611	2025-07-04 12:49:00	23	25	4	2	\N
+612	2025-07-04 12:53:00	23	18	4	0	\N
+613	2025-07-04 12:54:00	23	18	4	0	\N
+614	2025-07-04 13:00:00	22	23	4	3	\N
+615	2025-07-04 13:10:00	22	25	4	3	\N
+616	2025-07-04 13:28:00	22	23	4	3	\N
+617	2025-07-07 08:42:00	1	13	4	1	\N
+618	2025-07-07 08:46:00	1	13	4	0	\N
+619	2025-07-07 08:49:00	1	13	4	1	\N
+620	2025-07-07 08:53:00	1	13	4	3	\N
+621	2025-07-07 12:13:00	11	21	1	0	1
+623	2025-07-07 12:17:00	21	28	0	1	2
+625	2025-07-07 12:22:00	21	7	4	1	\N
+626	2025-07-07 12:26:00	22	21	2	4	\N
+629	2025-07-07 12:32:00	21	7	2	4	\N
+633	2025-07-07 12:40:00	7	22	4	3	\N
+635	2025-07-07 12:45:00	7	23	2	1	1
+637	2025-07-07 12:48:00	23	21	1	1	2
+639	2025-07-07 12:54:00	22	23	4	3	\N
+641	2025-07-07 12:58:00	22	7	4	3	\N
+642	2025-07-07 13:03:00	22	21	4	1	\N
+644	2025-07-07 13:11:00	22	23	3	4	\N
+645	2025-07-07 13:20:00	23	21	4	3	\N
+646	2025-07-07 13:27:00	23	22	3	4	\N
+647	2025-07-07 16:31:00	1	11	4	3	\N
+648	2025-07-07 16:32:00	1	7	2	1	1
+649	2025-07-08 12:14:00	14	21	4	2	\N
+650	2025-07-08 12:14:00	14	11	0	0	2
+651	2025-07-08 12:20:00	1	14	2	4	\N
+652	2025-07-08 12:25:00	14	7	4	2	\N
+654	2025-07-08 12:31:00	14	22	1	4	\N
+656	2025-07-08 12:32:00	22	23	2	0	1
+658	2025-07-08 12:39:00	21	23	1	4	\N
+660	2025-07-08 12:43:00	23	7	1	0	1
+661	2025-07-08 12:46:00	22	7	0	4	\N
+663	2025-07-08 12:53:00	21	7	4	3	\N
+665	2025-07-08 12:58:00	21	23	3	2	1
+667	2025-07-08 13:04:00	22	23	4	2	\N
+668	2025-07-08 16:31:00	23	1	4	2	\N
+669	2025-07-09 07:18:00	1	21	4	3	\N
+670	2025-07-09 07:24:00	1	21	4	3	\N
+671	2025-07-09 12:12:00	6	18	4	3	\N
+672	2025-07-09 12:14:00	18	21	4	1	\N
+674	2025-07-09 12:21:00	22	21	4	2	\N
+677	2025-07-09 12:32:00	22	7	4	2	\N
+680	2025-07-09 12:34:00	22	23	3	4	\N
+682	2025-07-09 12:39:00	23	21	3	1	1
+683	2025-07-09 12:42:00	7	21	1	1	1
+684	2025-07-09 12:49:00	22	21	4	2	\N
+686	2025-07-09 12:53:00	22	23	4	1	\N
+687	2025-07-09 12:56:00	22	7	4	1	\N
+689	2025-07-09 13:01:00	21	22	4	2	\N
+691	2025-07-09 13:11:00	21	23	3	4	\N
+692	2025-07-09 13:14:00	23	22	4	0	\N
+693	2025-07-09 13:19:00	23	21	4	2	\N
+694	2025-07-09 16:33:00	1	7	3	4	\N
+695	2025-07-09 16:33:00	7	1	4	1	\N
+696	2025-07-09 16:33:00	7	1	4	3	\N
+697	2025-07-10 12:13:00	18	6	1	4	\N
+698	2025-07-10 12:17:00	6	21	3	4	\N
+699	2025-07-10 12:24:00	21	1	3	4	\N
+702	2025-07-10 12:29:00	1	22	2	4	\N
+703	2025-07-10 12:32:00	23	22	4	0	\N
+705	2025-07-10 12:44:00	21	23	4	3	\N
+706	2025-07-10 12:49:00	21	22	2	4	\N
+708	2025-07-10 12:54:00	22	23	4	2	\N
+709	2025-07-10 13:00:00	22	21	4	3	\N
+710	2025-07-10 13:04:00	22	23	2	1	2
+711	2025-07-10 16:35:00	1	21	4	3	\N
+712	2025-07-10 16:44:00	21	23	4	3	\N
+713	2025-07-10 16:44:00	21	23	4	1	\N
+714	2025-07-10 16:44:00	21	23	4	1	\N
+715	2025-07-10 16:44:00	21	23	3	4	\N
+716	2025-07-10 16:45:00	21	1	4	3	\N
+717	2025-07-10 16:45:00	23	21	4	3	\N
+718	2025-07-10 16:49:00	23	21	0	1	2
+719	2025-07-10 16:57:00	21	23	4	3	\N
+720	2025-07-10 17:02:00	23	21	4	2	\N
+721	2025-07-10 17:51:00	23	21	4	1	\N
+722	2025-07-10 17:57:00	23	21	2	4	\N
+723	2025-07-10 18:01:00	21	23	1	0	1
+724	2025-07-10 18:06:00	21	23	4	2	\N
+725	2025-07-10 18:12:00	21	23	4	1	\N
+726	2025-07-10 18:20:00	21	23	2	4	\N
+727	2025-07-10 18:26:00	23	21	1	4	\N
+728	2025-07-10 18:34:00	21	23	4	3	\N
+729	2025-07-11 07:35:00	21	1	3	4	\N
+730	2025-07-11 07:37:00	1	21	3	0	1
+731	2025-07-11 07:41:00	1	21	4	2	\N
+732	2025-07-11 07:46:00	1	21	3	4	\N
+733	2025-07-11 07:53:00	21	23	2	4	\N
+734	2025-07-11 07:59:00	23	1	2	4	\N
+735	2025-07-11 12:15:00	1	23	4	0	\N
+736	2025-07-11 12:17:00	1	25	0	0	1
+737	2025-07-11 12:24:00	23	25	4	3	\N
+738	2025-07-11 12:28:00	23	1	2	1	2
+739	2025-07-11 12:34:00	23	1	4	2	\N
+740	2025-07-11 12:40:00	23	1	4	3	\N
+741	2025-07-11 12:43:00	23	1	1	4	\N
+742	2025-07-11 12:47:00	1	23	4	1	\N
+743	2025-07-11 12:54:00	23	1	4	3	\N
+744	2025-07-11 13:03:00	23	1	4	3	\N
+745	2025-07-14 12:16:00	21	14	2	4	\N
+746	2025-07-14 12:18:00	14	1	1	2	1
+748	2025-07-14 12:26:00	1	7	3	2	2
+750	2025-07-14 12:30:00	1	23	3	4	\N
+754	2025-07-14 12:38:00	23	22	3	4	\N
+756	2025-07-14 12:44:00	22	25	3	1	1
+761	2025-07-14 12:51:00	25	21	4	2	\N
+765	2025-07-14 13:01:00	25	23	4	3	\N
+767	2025-07-14 13:05:00	25	7	3	4	\N
+769	2025-07-14 13:10:00	7	22	2	4	\N
+771	2025-07-14 16:30:00	1	7	3	4	\N
+772	2025-07-14 16:34:00	7	21	0	1	1
+773	2025-07-14 16:37:00	21	7	1	4	\N
+781	2025-07-16 12:02:00	7	25	1	1	2
+782	2025-07-16 12:02:00	1	7	3	4	\N
+784	2025-07-16 12:14:00	22	23	4	3	\N
+785	2025-07-16 12:17:00	22	21	4	0	\N
+783	2025-07-16 12:12:00	7	22	1	4	\N
+790	2025-07-16 12:26:00	22	25	4	2	\N
+791	2025-07-16 12:31:00	7	22	1	4	\N
+793	2025-07-16 12:44:00	21	23	0	4	\N
+795	2025-07-16 12:53:00	23	7	4	1	\N
+796	2025-07-16 12:54:00	23	22	4	2	\N
+797	2025-07-16 12:58:00	23	24	1	4	\N
+798	2025-07-16 13:01:00	24	25	0	1	2
+799	2025-07-16 13:05:00	22	24	4	3	\N
+800	2025-07-16 13:06:00	23	36	4	3	\N
+801	2025-07-16 13:08:00	21	22	1	4	\N
+802	2025-07-16 13:28:00	22	23	4	1	\N
+803	2025-07-16 13:44:00	22	36	4	1	\N
+804	2025-07-18 12:02:00	7	1	4	3	\N
+805	2025-07-18 12:04:00	7	1	4	0	\N
+806	2025-07-18 12:11:00	7	1	4	3	\N
+807	2025-07-18 12:20:00	7	23	4	3	\N
+808	2025-07-18 12:22:00	7	1	2	4	\N
+809	2025-07-18 12:28:00	1	23	4	3	\N
+810	2025-07-18 12:33:00	1	7	2	3	2
+811	2025-07-18 12:36:00	23	1	4	1	\N
+812	2025-07-21 12:09:00	21	6	3	1	2
+813	2025-07-21 12:10:00	21	6	4	3	\N
+814	2025-07-21 12:13:00	21	7	0	0	2
+816	2025-07-21 12:19:00	7	21	4	3	\N
+819	2025-07-21 12:29:00	7	1	3	4	\N
+820	2025-07-21 12:30:00	1	22	4	3	\N
+821	2025-07-21 12:38:00	7	21	4	3	\N
+823	2025-07-21 12:47:00	23	1	3	3	1
+826	2025-07-21 12:53:00	1	7	4	2	\N
+827	2025-07-21 12:57:00	1	22	3	4	\N
+830	2025-07-21 13:02:00	21	22	1	4	\N
+831	2025-07-21 13:07:00	22	23	4	1	\N
+833	2025-07-21 13:16:00	22	7	4	3	\N
+834	2025-07-21 16:30:00	1	7	2	4	\N
+835	2025-07-21 16:34:00	7	1	4	0	\N
+836	2025-07-21 16:38:00	7	1	1	4	\N
+837	2025-07-21 16:42:00	1	7	4	3	\N
+838	2025-07-21 16:49:00	1	7	4	3	\N
+839	2025-07-21 16:54:00	1	7	3	4	\N
+840	2025-07-21 16:59:00	7	1	3	4	\N
+841	2025-07-22 12:21:00	21	7	2	4	\N
+843	2025-07-22 12:27:00	7	22	4	1	\N
+845	2025-07-22 12:36:00	7	23	4	3	\N
+849	2025-07-22 12:45:00	7	21	4	2	\N
+853	2025-07-22 12:52:00	7	22	3	4	\N
+858	2025-07-22 13:04:00	22	23	3	4	\N
+859	2025-07-22 13:04:00	23	21	4	2	\N
+861	2025-07-22 13:11:00	23	22	4	3	\N
+862	2025-07-22 13:16:00	23	1	4	2	\N
+863	2025-07-22 13:21:00	23	21	4	2	\N
+864	2025-07-22 16:29:00	1	7	3	2	1
+865	2025-07-22 16:35:00	1	7	4	2	\N
+866	2025-07-22 16:39:00	1	7	4	2	\N
+867	2025-07-22 16:41:00	1	7	1	4	\N
+869	2025-07-22 16:48:00	7	23	4	2	\N
+870	2025-07-22 16:56:00	1	23	4	3	\N
+873	2025-07-23 12:20:00	22	11	0	2	2
+875	2025-07-23 12:23:00	7	6	0	0	2
+876	2025-07-23 12:29:00	7	22	2	4	\N
+878	2025-07-23 12:30:00	22	1	0	0	1
+879	2025-07-23 12:40:00	23	1	2	4	\N
+880	2025-07-23 12:41:00	1	7	3	4	\N
+883	2025-07-23 12:47:00	7	22	1	4	\N
+885	2025-07-23 12:54:00	22	6	4	3	\N
+887	2025-07-23 12:58:00	22	23	4	0	\N
+888	2025-07-23 13:02:00	22	7	1	0	2
+891	2025-07-23 16:24:00	7	1	4	2	\N
+892	2025-07-23 16:29:00	7	1	4	3	\N
+893	2025-07-23 16:34:00	7	1	0	4	\N
+901	2025-07-24 08:16:00	1	21	3	4	\N
+902	2025-07-24 08:17:00	11	1	1	1	1
+903	2025-07-24 08:17:00	11	1	4	3	\N
+904	2025-07-24 08:18:00	21	22	4	0	\N
+905	2025-07-24 08:24:00	21	23	2	4	\N
+907	2025-07-24 08:27:00	23	1	4	2	\N
+909	2025-07-24 08:35:00	23	7	1	4	\N
+911	2025-07-24 08:43:00	7	22	4	3	\N
+913	2025-07-24 08:50:00	7	21	1	2	2
+915	2025-07-24 08:57:00	23	7	3	4	\N
+920	2025-07-24 12:10:00	4	21	3	4	\N
+921	2025-07-24 12:15:00	21	1	4	2	\N
+922	2025-07-24 12:25:00	1	22	4	3	\N
+923	2025-07-24 12:25:00	22	21	4	1	\N
+924	2025-07-24 12:30:00	7	1	3	4	\N
+925	2025-07-24 12:40:00	23	1	4	3	\N
+926	2025-07-24 12:40:00	23	21	4	2	\N
+928	2025-07-24 12:46:00	23	22	3	4	\N
+931	2025-07-24 12:53:00	22	7	3	4	\N
+934	2025-07-24 13:05:00	7	21	4	3	\N
+935	2025-07-24 13:06:00	7	15	4	3	\N
+936	2025-07-24 13:10:00	7	23	4	1	\N
+937	2025-07-24 13:18:00	7	22	4	3	\N
+938	2025-07-24 13:22:00	7	21	4	2	\N
+939	2025-07-24 13:27:00	7	23	4	3	\N
+940	2025-07-24 16:29:00	7	1	1	4	\N
+941	2025-07-24 16:32:00	1	7	1	4	\N
+942	2025-07-24 16:37:00	7	1	4	3	\N
+943	2025-07-25 11:59:00	21	23	4	1	\N
+944	2025-07-25 12:10:00	21	7	4	2	\N
+945	2025-07-25 12:10:00	21	18	4	2	2
+947	2025-07-28 12:18:00	21	7	2	1	2
+950	2025-07-28 12:24:00	21	23	4	3	\N
+951	2025-07-28 12:28:00	21	25	4	1	\N
+954	2025-07-28 12:35:00	21	22	4	2	\N
+955	2025-07-28 12:35:00	21	7	0	0	2
+957	2025-07-28 12:40:00	23	21	2	4	\N
+960	2025-07-28 12:47:00	21	25	2	2	1
+963	2025-07-28 12:54:00	25	22	3	4	\N
+966	2025-07-28 13:00:00	22	7	2	4	\N
+969	2025-07-28 13:05:00	7	23	3	1	1
+970	2025-07-28 13:15:00	23	21	4	2	\N
+971	2025-07-28 16:29:00	1	7	4	3	\N
+972	2025-07-28 16:34:00	1	7	2	4	\N
+982	2025-07-29 08:41:00	21	1	1	2	2
+988	2025-07-29 12:02:00	18	11	2	4	\N
+989	2025-07-29 12:03:00	11	18	3	3	2
+990	2025-07-29 12:09:00	18	11	4	3	\N
+992	2025-07-29 12:22:00	7	21	4	2	\N
+995	2025-07-29 12:27:00	7	22	2	4	\N
+998	2025-07-29 12:37:00	22	23	4	3	\N
+1001	2025-07-29 12:42:00	22	25	4	2	\N
+1004	2025-07-29 12:50:00	22	21	3	3	2
+1009	2025-07-29 16:26:00	1	21	4	3	\N
+1010	2025-07-29 16:30:00	1	7	0	1	1
+1011	2025-07-29 16:44:00	7	22	4	3	\N
+1012	2025-07-29 16:47:00	7	6	4	2	\N
+1013	2025-07-29 16:47:00	7	11	4	2	\N
+1014	2025-07-29 16:48:00	11	7	2	4	\N
+1015	2025-07-29 16:51:00	7	6	2	0	2
+1016	2025-07-29 16:55:00	7	22	0	4	\N
+1020	2025-07-30 12:15:00	1	21	4	2	\N
+1021	2025-07-30 12:18:00	7	1	3	2	2
+1027	2025-07-30 12:43:00	7	22	3	4	\N
+1028	2025-07-30 12:43:00	22	23	4	1	\N
+1029	2025-07-30 12:43:00	22	25	4	3	\N
+1031	2025-07-30 12:47:00	22	21	3	4	\N
+1035	2025-07-30 12:56:00	7	21	4	2	\N
+1037	2025-07-30 12:59:00	7	23	3	4	\N
+1039	2025-07-30 13:14:00	23	25	4	2	\N
+1040	2025-07-30 13:14:00	23	22	3	4	\N
+1041	2025-07-30 16:25:00	7	1	4	3	\N
+1042	2025-07-30 16:29:00	7	1	2	4	\N
+1043	2025-07-30 16:34:00	1	7	1	1	1
+1044	2025-07-31 08:30:00	13	1	3	3	1
+1045	2025-07-31 08:31:00	13	1	0	0	1
+1046	2025-07-31 08:40:00	1	21	3	4	\N
+1047	2025-07-31 08:42:00	21	13	0	0	1
+1048	2025-07-31 08:42:00	13	1	0	0	2
+1049	2025-07-31 08:51:00	13	2	3	4	\N
+1050	2025-07-31 08:56:00	2	21	1	4	\N
+1051	2025-07-31 09:01:00	1	21	4	2	\N
+1052	2025-07-31 09:08:00	1	2	4	3	\N
+1053	2025-07-31 09:15:00	1	21	4	3	\N
+1054	2025-07-31 09:15:00	1	2	0	0	2
+1055	2025-07-31 09:17:00	21	1	0	4	\N
+1057	2025-07-31 12:20:00	21	23	4	3	\N
+1059	2025-07-31 12:25:00	22	21	4	1	\N
+1065	2025-07-31 12:32:00	22	7	4	3	\N
+1067	2025-07-31 12:35:00	23	22	1	1	1
+1068	2025-07-31 12:36:00	21	6	3	4	\N
+1071	2025-07-31 12:41:00	22	21	3	4	\N
+1074	2025-07-31 12:45:00	21	7	2	4	2
+1080	2025-07-31 12:56:00	23	21	3	4	\N
+1085	2025-07-31 13:05:00	21	22	3	4	\N
+1087	2025-07-31 13:13:00	22	7	4	3	\N
+1088	2025-07-31 16:26:00	21	7	4	2	\N
+1089	2025-07-31 16:34:00	21	1	2	4	\N
+1090	2025-07-31 16:38:00	1	7	4	1	\N
+1091	2025-08-01 07:19:00	1	7	4	0	\N
+1092	2025-08-01 07:24:00	7	1	2	4	\N
+1093	2025-08-01 07:30:00	7	1	2	4	\N
+1094	2025-08-01 12:04:00	1	7	3	4	\N
+1095	2025-08-01 12:10:00	7	1	3	3	1
+1096	2025-08-01 12:18:00	1	7	4	3	\N
+1097	2025-08-01 12:23:00	1	7	4	3	\N
+1100	2025-08-04 12:23:00	1	21	3	4	\N
+1104	2025-08-04 12:30:00	21	23	2	4	\N
+1108	2025-08-04 12:38:00	23	7	3	4	\N
+1114	2025-08-04 12:52:00	7	21	3	3	1
+1117	2025-08-04 13:00:00	21	23	4	3	\N
+1120	2025-08-04 13:05:00	7	21	2	4	\N
+1121	2025-08-04 16:31:00	1	11	4	3	1
+1123	2025-08-05 07:40:00	25	21	0	2	1
+1128	2025-08-05 08:31:00	22	1	1	4	\N
+1129	2025-08-05 08:33:00	1	22	1	0	1
+1130	2025-08-05 08:36:00	22	1	2	2	1
+1131	2025-08-05 08:40:00	22	1	2	4	\N
+1132	2025-08-05 08:47:00	37	1	3	4	\N
+1133	2025-08-05 08:49:00	1	22	4	0	\N
+1134	2025-08-05 08:52:00	37	1	1	2	2
+1137	2025-08-05 12:23:00	21	7	4	2	\N
+1139	2025-08-05 12:27:00	21	23	4	3	\N
+1141	2025-08-05 12:30:00	21	22	2	2	1
+1146	2025-08-05 12:39:00	25	22	4	3	\N
+1149	2025-08-05 12:48:00	25	7	4	3	\N
+1153	2025-08-05 12:51:00	25	23	3	0	1
+1155	2025-08-05 12:56:00	21	23	4	2	\N
+1158	2025-08-05 13:01:00	21	22	2	4	\N
+1161	2025-08-05 13:06:00	22	7	4	2	\N
+1163	2025-08-05 13:11:00	22	25	4	2	\N
+1164	2025-08-05 16:30:00	11	1	2	4	\N
+1165	2025-08-05 16:38:00	1	7	4	3	\N
+1166	2025-08-06 08:01:00	1	11	3	4	\N
+1167	2025-08-06 08:02:00	11	7	1	0	1
+1169	2025-08-06 08:18:00	7	11	3	4	\N
+1168	2025-08-06 08:08:00	1	7	3	4	\N
+1170	2025-08-06 08:20:00	11	15	2	2	2
+1171	2025-08-06 08:24:00	11	1	2	4	\N
+1172	2025-08-06 08:33:00	1	7	3	2	1
+1173	2025-08-06 08:36:00	7	15	4	1	\N
+1174	2025-08-06 08:37:00	7	11	1	0	1
+1175	2025-08-06 08:41:00	11	1	4	1	\N
+1176	2025-08-06 10:05:00	11	7	3	4	\N
+1178	2025-08-06 11:30:00	25	23	4	1	\N
+1180	2025-08-06 11:30:00	25	23	4	2	\N
+1181	2025-08-06 11:31:00	25	23	4	3	\N
+1183	2025-08-06 11:38:00	25	7	4	1	\N
+1185	2025-08-06 11:43:00	25	23	4	3	\N
+1186	2025-08-06 11:49:00	25	21	3	1	1
+1189	2025-08-06 11:58:00	21	7	3	4	\N
+1191	2025-08-06 12:12:00	25	23	2	4	\N
+1194	2025-08-06 12:24:00	23	25	2	2	2
+1196	2025-08-06 12:29:00	23	1	4	3	\N
+1197	2025-08-06 12:35:00	25	23	3	4	\N
+1202	2025-08-06 12:46:00	1	7	4	3	\N
+1204	2025-08-06 12:51:00	23	7	2	4	\N
+1205	2025-08-06 12:56:00	7	23	4	1	\N
+1207	2025-08-06 13:00:00	7	23	4	2	\N
+1211	2025-08-07 08:44:00	21	23	4	3	\N
+1212	2025-08-07 08:47:00	21	1	2	3	2
+1213	2025-08-07 08:52:00	1	21	2	4	\N
+1214	2025-08-07 08:59:00	21	1	3	4	\N
+1215	2025-08-07 09:02:00	1	23	2	3	1
+1216	2025-08-07 09:10:00	23	21	4	2	\N
+1217	2025-08-07 09:15:00	23	2	4	3	\N
+1218	2025-08-07 09:27:00	23	21	4	3	\N
+1219	2025-08-07 09:28:00	23	21	4	2	\N
+1221	2025-08-07 09:36:00	21	23	4	2	\N
+1222	2025-08-07 12:07:00	21	18	4	3	\N
+1223	2025-08-07 12:11:00	21	15	4	2	\N
+1228	2025-08-07 12:33:00	11	22	2	4	\N
+1229	2025-08-07 12:33:00	22	23	4	3	\N
+1232	2025-08-07 12:40:00	22	21	4	3	\N
+1235	2025-08-07 12:52:00	22	23	4	2	\N
+1237	2025-08-07 12:53:00	22	21	4	2	\N
+1239	2025-08-07 12:57:00	22	23	4	0	\N
+1242	2025-08-07 13:02:00	22	21	4	1	\N
+1220	2025-08-07 09:28:00	21	23	1	0	\N
+1195	2025-08-06 12:25:00	25	23	4	3	\N
+1245	2025-08-07 13:12:00	22	21	4	0	\N
+1246	2025-08-07 15:18:00	23	21	2	4	\N
+1247	2025-08-07 16:31:00	21	24	4	3	\N
+1248	2025-08-07 16:40:00	21	23	4	3	\N
+1249	2025-08-07 16:48:00	22	21	4	3	\N
+1244	2025-08-07 13:07:00	22	23	3	1	\N
+1253	2025-08-11 12:15:00	6	21	4	3	\N
+1256	2025-08-11 12:24:00	7	21	3	3	1
+1258	2025-08-11 12:28:00	23	21	4	3	\N
+1260	2025-08-11 12:33:00	23	22	4	3	\N
+1262	2025-08-11 12:39:00	23	7	1	4	\N
+1266	2025-08-11 12:47:00	7	21	2	3	1
+1272	2025-08-11 13:02:00	21	23	4	3	\N
+1273	2025-08-11 13:06:00	21	7	3	4	\N
+1201	2025-08-06 12:42:00	23	7	3	3	1
+1276	2025-08-11 13:16:00	23	22	1	4	\N
+1278	2025-08-11 13:20:00	23	22	0	2	2
+1277	2025-08-11 13:09:00	21	22	4	2	\N
+1279	2025-08-11 16:35:00	7	1	4	3	\N
+1282	2025-08-12 12:21:00	23	21	4	2	\N
+1284	2025-08-12 12:29:00	23	7	3	4	\N
+1287	2025-08-12 12:36:00	7	22	3	3	2
+1290	2025-08-12 12:38:00	25	7	1	1	1
+1295	2025-08-12 12:50:00	7	21	3	4	\N
+1300	2025-08-12 13:02:00	21	23	3	4	\N
+1301	2025-08-12 13:02:00	22	23	4	0	\N
+1303	2025-08-12 13:05:00	22	25	4	3	\N
+1304	2025-08-12 13:10:00	22	21	2	4	\N
+1305	2025-08-12 16:25:00	21	7	4	3	\N
+1306	2025-08-12 16:32:00	21	1	4	3	\N
+1307	2025-08-13 12:05:00	21	14	4	1	\N
+1308	2025-08-13 12:09:00	21	14	2	3	2
+1311	2025-08-13 12:16:00	11	21	3	4	\N
+1313	2025-08-13 12:23:00	21	23	3	1	1
+1315	2025-08-13 12:25:00	23	22	1	2	2
+1319	2025-08-13 12:34:00	7	23	4	3	\N
+1320	2025-08-13 12:37:00	7	21	4	0	\N
+1323	2025-08-13 12:43:00	7	22	2	4	\N
+1327	2025-08-13 12:55:00	22	23	2	4	\N
+1329	2025-08-13 12:56:00	23	21	2	4	\N
+1330	2025-08-13 12:56:00	21	7	0	0	1
+1333	2025-08-13 13:02:00	22	7	4	3	\N
+1335	2025-08-13 13:06:00	22	23	4	0	\N
+1337	2025-08-13 16:26:00	1	2	3	4	\N
+1338	2025-08-13 16:27:00	2	1	1	0	1
+1339	2025-08-13 16:34:00	1	2	3	3	1
+1342	2025-08-14 12:23:00	21	23	3	4	\N
+1346	2025-08-14 12:36:00	23	22	4	2	\N
+1347	2025-08-14 12:36:00	23	7	3	4	\N
+1350	2025-08-14 12:41:00	7	25	2	4	\N
+1360	2025-08-14 13:05:00	23	7	4	3	1
+1361	2025-08-14 13:06:00	23	22	4	0	\N
+1364	2025-08-14 13:11:00	21	7	4	3	\N
+1367	2025-08-14 13:31:00	22	21	0	4	\N
+1368	2025-08-14 13:31:00	23	22	3	4	\N
+1369	2025-08-14 13:32:00	22	25	3	1	2
+1370	2025-08-14 16:28:00	7	1	2	4	\N
+1371	2025-08-14 16:30:00	1	7	0	1	\N
+1372	2025-08-14 16:35:00	1	21	3	4	\N
+1382	2025-08-15 12:02:00	21	7	3	4	\N
+1383	2025-08-15 12:07:00	7	14	4	2	\N
+1385	2025-08-15 12:13:00	7	14	4	3	\N
+1386	2025-08-15 12:17:00	7	14	4	3	\N
+1387	2025-08-15 12:24:00	7	14	4	0	\N
+1389	2025-08-18 12:16:00	1	21	4	3	\N
+1391	2025-08-18 12:23:00	23	25	4	2	\N
+1394	2025-08-18 12:33:00	7	22	3	3	2
+1395	2025-08-18 12:33:00	22	23	4	1	\N
+1397	2025-08-18 12:38:00	7	21	4	0	\N
+1400	2025-08-18 12:42:00	7	25	1	4	\N
+1401	2025-08-18 12:47:00	25	23	4	3	\N
+1405	2025-08-18 12:53:00	25	22	1	2	2
+1409	2025-08-18 13:00:00	25	21	0	4	\N
+1410	2025-08-18 13:03:00	21	7	4	3	\N
+1413	2025-08-18 13:05:00	21	23	0	0	1
+1415	2025-08-18 13:08:00	22	23	4	2	\N
+1417	2025-08-18 13:15:00	22	21	4	2	\N
+1418	2025-08-18 13:15:00	22	15	0	0	2
+1424	2025-08-19 08:55:00	1	6	4	3	\N
+1427	2025-08-19 09:13:00	1	21	4	2	\N
+1428	2025-08-19 09:18:00	21	1	4	3	\N
+1431	2025-08-19 12:16:00	21	14	0	0	2
+1432	2025-08-19 12:16:00	14	21	1	0	1
+1433	2025-08-19 12:16:00	14	21	3	2	1
+1435	2025-08-19 12:22:00	21	1	3	4	\N
+1439	2025-08-19 12:26:00	1	7	2	3	1
+1442	2025-08-19 12:33:00	7	23	4	3	\N
+1444	2025-08-19 12:36:00	7	25	0	4	\N
+1448	2025-08-19 12:43:00	25	22	4	3	\N
+1454	2025-08-19 12:50:00	25	21	4	2	\N
+1455	2025-08-19 12:56:00	25	23	4	3	\N
+1459	2025-08-19 13:01:00	25	7	4	2	\N
+1461	2025-08-19 13:13:00	22	21	2	4	\N
+1464	2025-08-19 13:20:00	23	21	3	4	\N
+1466	2025-08-19 16:29:00	21	1	3	3	2
+1467	2025-08-19 16:36:00	7	21	1	4	\N
+1468	2025-08-19 16:42:00	21	23	4	3	\N
+1469	2025-08-19 16:48:00	21	7	3	4	\N
+1470	2025-08-19 16:54:00	7	23	4	3	\N
+1471	2025-08-20 12:12:00	21	15	0	0	2
+1474	2025-08-20 12:25:00	21	23	3	4	\N
+1477	2025-08-20 12:31:00	23	7	2	4	\N
+1478	2025-08-20 12:33:00	7	22	4	0	\N
+1482	2025-08-20 12:43:00	7	25	4	3	\N
+1486	2025-08-20 12:48:00	7	21	1	4	\N
+1487	2025-08-20 12:53:00	23	21	4	0	\N
+1490	2025-08-20 13:01:00	23	25	1	2	2
+1491	2025-08-20 13:01:00	22	23	2	4	\N
+1495	2025-08-20 13:15:00	23	21	4	3	\N
+1496	2025-08-20 16:25:00	21	1	4	1	\N
+1497	2025-08-20 16:30:00	21	1	4	2	\N
+1498	2025-08-20 16:42:00	21	7	3	4	\N
+1499	2025-08-20 16:42:00	7	23	2	2	2
+1500	2025-08-20 16:45:00	1	7	1	2	1
+1501	2025-08-20 16:50:00	7	21	1	4	\N
+1502	2025-08-20 16:56:00	21	23	2	4	\N
+1503	2025-08-20 16:59:00	23	1	1	4	\N
+1504	2025-08-20 17:05:00	1	21	3	4	\N
+1507	2025-08-21 12:15:00	21	1	4	3	\N
+1509	2025-08-21 12:20:00	21	7	4	0	\N
+1511	2025-08-21 12:29:00	21	23	3	4	\N
+1515	2025-08-21 12:38:00	23	22	3	4	\N
+1517	2025-08-21 12:43:00	22	7	3	4	\N
+1521	2025-08-21 12:53:00	7	21	3	4	2
+1523	2025-08-21 12:55:00	23	7	1	2	1
+1526	2025-08-21 13:00:00	7	22	2	2	2
+1527	2025-08-21 13:10:00	21	23	3	4	\N
+1529	2025-08-21 13:15:00	23	22	0	4	\N
+1530	2025-08-21 13:16:00	22	21	0	0	1
+1531	2025-08-21 13:17:00	3	21	0	0	2
+1537	2025-08-21 15:42:00	1	21	4	2	\N
+1538	2025-08-21 15:42:00	1	3	4	1	\N
+1539	2025-08-21 15:45:00	1	21	4	1	\N
+1540	2025-08-21 15:46:00	1	3	0	0	2
+1541	2025-08-21 15:50:00	21	1	1	4	\N
+1542	2025-08-21 15:56:00	1	3	4	1	\N
+1543	2025-08-21 16:02:00	1	21	3	3	2
+1544	2025-08-21 16:03:00	3	1	0	0	2
+1545	2025-08-26 09:13:00	23	25	4	2	\N
+1546	2025-08-26 09:20:00	23	1	4	2	\N
+1550	2025-08-26 12:28:00	23	14	4	3	\N
+1551	2025-08-26 12:29:00	23	7	4	2	\N
+1553	2025-08-26 12:33:00	23	22	3	4	\N
+1557	2025-08-26 12:39:00	22	1	3	1	2
+1560	2025-08-26 12:46:00	22	7	4	1	\N
+1562	2025-08-26 12:49:00	22	23	3	1	2
+1566	2025-08-26 12:57:00	22	1	4	1	\N
+1570	2025-08-26 12:58:00	22	7	4	3	\N
+1572	2025-08-26 13:06:00	22	7	2	4	\N
+1574	2025-08-26 16:24:00	7	1	0	1	2
+1575	2025-08-26 16:27:00	1	7	4	3	\N
+1576	2025-08-26 16:31:00	1	7	3	4	\N
+1581	2025-08-27 12:28:00	7	23	3	4	\N
+1583	2025-08-27 12:33:00	23	22	3	4	\N
+1584	2025-08-27 12:36:00	7	22	4	1	\N
+1589	2025-08-27 12:46:00	7	23	3	4	\N
+1592	2025-08-27 12:52:00	23	22	3	3	1
+1594	2025-08-27 12:57:00	22	7	4	3	\N
+1596	2025-08-27 13:02:00	22	23	4	2	\N
+1598	2025-08-27 16:27:00	7	1	4	2	\N
+1599	2025-08-27 16:28:00	7	1	0	1	2
+1619	2025-08-28 12:22:00	1	7	4	1	\N
+1620	2025-08-28 12:25:00	1	23	4	1	\N
+1622	2025-08-28 12:29:00	1	22	3	1	2
+1628	2025-08-28 12:44:00	1	7	3	4	\N
+1630	2025-08-28 12:44:00	7	23	3	4	\N
+1632	2025-08-28 12:56:00	23	22	4	2	\N
+1633	2025-08-28 12:56:00	23	7	4	3	\N
+1638	2025-08-28 13:04:00	23	22	4	3	\N
+1640	2025-08-28 13:08:00	23	22	2	3	1
+1641	2025-08-28 13:10:00	22	23	2	3	1
+1643	2025-08-28 13:15:00	23	22	2	4	\N
+1646	2025-08-29 12:12:00	1	14	0	1	2
+1647	2025-08-29 12:15:00	14	1	0	4	\N
+1648	2025-08-29 12:19:00	1	14	3	1	\N
+1653	2025-08-29 12:44:00	18	14	2	3	2
+1658	2025-08-29 13:06:00	6	1	3	4	\N
+1659	2025-08-29 13:09:00	1	13	0	1	1
+1665	2025-09-01 07:53:00	13	1	4	3	\N
+1666	2025-09-01 07:58:00	13	1	2	4	\N
+1667	2025-09-01 08:00:00	1	13	0	4	\N
+1668	2025-09-01 08:01:00	13	1	0	0	2
+1669	2025-09-01 08:04:00	1	13	2	1	1
+1670	2025-09-01 08:05:00	1	13	0	0	2
+1671	2025-09-01 08:13:00	13	1	2	4	\N
+1672	2025-09-01 08:13:00	1	6	0	4	\N
+1681	2025-09-01 12:26:00	4	7	1	0	2
+1683	2025-09-01 12:29:00	22	7	4	2	\N
+1687	2025-09-01 12:39:00	22	7	3	4	\N
+1689	2025-09-01 12:43:00	7	22	4	2	\N
+1690	2025-09-01 12:45:00	7	22	0	1	2
+1692	2025-09-01 12:50:00	22	7	4	2	\N
+1696	2025-09-01 12:59:00	22	7	3	4	\N
+1699	2025-09-01 13:04:00	7	22	4	2	\N
+1711	2025-09-02 12:22:00	7	13	4	3	\N
+1715	2025-09-02 12:37:00	22	25	3	4	\N
+1716	2025-09-02 12:37:00	25	7	4	0	\N
+1719	2025-09-02 12:42:00	22	25	4	3	\N
+1723	2025-09-02 12:54:00	22	25	4	2	\N
+1724	2025-09-02 12:54:00	7	22	2	4	\N
+1734	2025-09-02 16:25:00	7	1	0	4	\N
+1735	2025-09-02 16:31:00	1	7	2	4	\N
+1737	2025-09-03 12:29:00	7	25	0	0	2
+1739	2025-09-03 12:34:00	25	7	4	1	\N
+1743	2025-09-03 12:41:00	25	7	4	3	\N
+1745	2025-09-03 12:45:00	25	7	4	0	\N
+1747	2025-09-03 12:51:00	25	7	3	4	\N
+1752	2025-09-03 12:58:00	7	25	3	4	\N
+1754	2025-09-03 13:06:00	25	7	4	2	\N
+1759	2025-09-03 17:08:00	7	1	4	2	\N
+1781	2025-09-04 12:25:00	7	22	4	3	\N
+1784	2025-09-04 12:31:00	7	25	4	2	\N
+1787	2025-09-04 12:35:00	7	22	4	2	\N
+1788	2025-09-04 12:39:00	22	25	1	2	2
+1791	2025-09-04 12:45:00	22	7	4	2	\N
+1795	2025-09-04 12:52:00	22	25	2	4	\N
+1797	2025-09-04 12:56:00	25	7	4	0	\N
+1800	2025-09-04 13:01:00	25	22	1	4	\N
+1806	2025-09-05 12:00:00	7	1	4	2	\N
+1807	2025-09-05 12:02:00	7	1	3	1	1
+1808	2025-09-05 12:06:00	7	1	4	2	\N
+1824	2025-09-08 12:07:00	21	19	4	1	\N
+1825	2025-09-08 12:08:00	21	6	3	4	\N
+1829	2025-09-08 12:30:00	22	21	2	4	\N
+1833	2025-09-08 12:38:00	21	7	4	3	\N
+1836	2025-09-08 12:41:00	21	22	4	1	\N
+1839	2025-09-08 12:46:00	21	7	1	4	\N
+1842	2025-09-08 12:53:00	7	22	4	3	\N
+1845	2025-09-08 13:01:00	22	21	4	3	\N
+1849	2025-09-08 13:09:00	22	7	3	4	\N
+1851	2025-09-08 13:16:00	7	21	3	4	\N
+1852	2025-09-08 16:26:00	7	1	2	1	2
+1853	2025-09-08 16:37:00	7	21	4	3	\N
+1854	2025-09-08 16:40:00	21	7	2	4	\N
+1855	2025-09-08 16:50:00	21	7	4	1	\N
+1856	2025-09-09 08:20:00	1	2	4	3	\N
+1857	2025-09-09 08:25:00	1	2	4	2	\N
+1858	2025-09-09 08:29:00	1	2	4	3	\N
+1860	2025-09-09 12:16:00	25	21	4	3	\N
+1861	2025-09-09 12:20:00	25	7	4	1	\N
+1863	2025-09-09 12:27:00	25	22	4	3	\N
+1865	2025-09-09 12:34:00	25	21	3	4	2
+1868	2025-09-09 12:41:00	7	25	3	4	\N
+1872	2025-09-09 12:54:00	22	21	2	2	1
+1874	2025-09-09 12:57:00	21	7	4	0	\N
+1876	2025-09-09 13:04:00	25	21	2	4	\N
+1877	2025-09-09 13:12:00	21	22	4	3	\N
+1878	2025-09-09 13:15:00	21	3	0	2	2
+1879	2025-09-09 13:20:00	22	21	3	2	1
+1880	2025-09-10 07:12:00	7	1	2	4	\N
+1882	2025-09-10 07:20:00	7	1	1	1	2
+1885	2025-09-10 12:18:00	21	14	2	2	2
+1881	2025-09-10 07:17:00	1	7	2	0	1
+1883	2025-09-10 07:27:00	7	1	2	4	\N
+1887	2025-09-10 12:23:00	21	7	4	2	\N
+1890	2025-09-10 12:31:00	21	22	1	4	\N
+1893	2025-09-10 12:36:00	22	7	2	4	\N
+1897	2025-09-10 12:45:00	7	21	3	3	2
+1900	2025-09-10 12:53:00	22	7	3	4	\N
+1903	2025-09-10 12:58:00	7	21	2	2	1
+1906	2025-09-10 13:05:00	21	22	3	1	\N
+1908	2025-09-10 13:12:00	21	7	4	3	\N
+1909	2025-09-10 16:28:00	21	7	3	4	\N
+1910	2025-09-10 16:34:00	7	1	4	3	\N
+1923	2025-09-11 12:13:00	21	4	0	0	2
+1926	2025-09-11 12:28:00	21	7	4	3	\N
+1930	2025-09-11 12:34:00	21	22	4	3	\N
+1932	2025-09-11 12:41:00	21	25	4	1	\N
+1934	2025-09-11 12:47:00	21	7	2	4	\N
+1936	2025-09-11 12:53:00	7	22	1	3	2
+1938	2025-09-11 12:57:00	25	7	4	0	\N
+1940	2025-09-11 13:03:00	25	21	1	3	2
+1944	2025-09-11 13:13:00	22	25	4	1	\N
+1945	2025-09-11 16:27:00	21	7	2	4	\N
+1946	2025-09-11 16:33:00	7	1	3	4	\N
+1947	2025-09-11 16:36:00	1	21	4	1	\N
+1948	2025-09-12 11:57:00	1	21	4	3	\N
+1949	2025-09-12 12:01:00	21	7	4	1	\N
+1951	2025-09-12 12:06:00	21	7	2	2	1
+1952	2025-09-12 12:07:00	7	21	0	0	2
+1953	2025-09-12 12:12:00	21	7	2	0	1
+1955	2025-09-12 12:15:00	21	7	4	1	\N
+1957	2025-09-12 12:22:00	21	7	1	4	\N
+1958	2025-09-12 12:29:00	7	21	4	3	\N
+1960	2025-09-12 12:35:00	7	21	1	4	\N
+1962	2025-09-12 12:41:00	21	7	4	1	\N
+1963	2025-09-12 12:43:00	21	1	1	0	2
+1972	2025-09-15 12:38:00	21	25	0	0	2
+1973	2025-09-15 12:39:00	22	21	3	4	\N
+1974	2025-09-15 12:39:00	21	22	1	4	\N
+1975	2025-09-15 12:43:00	22	21	4	2	\N
+1977	2025-09-15 12:48:00	22	25	1	0	2
+1978	2025-09-15 12:51:00	22	21	4	0	\N
+1982	2025-09-15 12:55:00	25	22	4	0	\N
+1989	2025-09-16 12:01:00	6	21	1	4	\N
+1990	2025-09-16 12:05:00	21	6	3	4	\N
+1999	2025-09-16 12:44:00	25	23	3	0	1
+2000	2025-09-16 12:45:00	23	21	4	3	\N
+2001	2025-09-16 12:46:00	23	21	4	3	\N
+2003	2025-09-16 12:49:00	23	22	4	3	\N
+2004	2025-09-16 12:50:00	23	22	2	3	2
+2005	2025-09-16 12:51:00	21	23	4	3	\N
+2011	2025-09-16 12:58:00	21	22	3	4	\N
+2012	2025-09-16 12:59:00	25	22	0	0	1
+2015	2025-09-16 13:06:00	23	22	3	4	\N
+2018	2025-09-16 13:25:00	21	25	4	2	\N
+2019	2025-09-16 13:31:00	21	22	4	3	\N
+2020	2025-09-16 13:36:00	21	22	1	1	1
+2021	2025-09-16 16:29:00	1	21	0	2	1
+2022	2025-09-16 16:35:00	21	1	3	0	1
+2023	2025-09-16 16:38:00	1	23	4	1	\N
+2033	2025-09-17 12:39:00	21	23	1	4	\N
+2034	2025-09-17 12:40:00	23	22	4	3	\N
+2037	2025-09-17 12:44:00	23	22	3	4	\N
+2042	2025-09-17 12:57:00	22	23	4	1	\N
+2043	2025-09-17 12:58:00	22	21	4	2	\N
+2047	2025-09-17 13:03:00	22	21	4	1	\N
+2052	2025-09-18 12:16:00	1	21	4	2	\N
+2056	2025-09-18 12:38:00	21	23	3	4	\N
+2057	2025-09-18 12:39:00	23	22	3	3	2
+2058	2025-09-18 12:39:00	21	23	3	2	2
+2060	2025-09-18 12:42:00	21	22	4	2	\N
+2064	2025-09-18 12:52:00	22	23	4	1	\N
+2065	2025-09-18 12:52:00	21	23	3	4	\N
+2068	2025-09-18 13:05:00	22	23	2	4	\N
+2071	2025-09-18 13:12:00	21	23	3	4	\N
+2072	2025-09-22 11:59:00	1	14	0	0	1
+2073	2025-09-22 12:02:00	14	1	4	1	1
+2074	2025-09-22 12:06:00	1	6	4	3	\N
+2077	2025-09-22 12:24:00	7	21	3	4	\N
+2084	2025-09-22 12:33:00	21	25	2	3	2
+2213	2025-09-29 08:58:00	1	7	3	4	\N
+2079	2025-09-22 12:28:00	21	23	4	0	\N
+2086	2025-09-22 12:40:00	22	21	4	3	\N
+2089	2025-09-22 12:46:00	22	7	4	2	\N
+2092	2025-09-22 12:51:00	22	7	3	1	1
+2094	2025-09-22 12:56:00	23	25	2	4	\N
+2095	2025-09-22 13:03:00	25	21	1	4	\N
+2098	2025-09-22 13:07:00	21	7	0	3	1
+2104	2025-09-22 16:26:00	7	1	3	2	2
+2105	2025-09-22 16:31:00	7	1	2	4	\N
+2106	2025-09-22 17:55:00	1	23	3	2	1
+2107	2025-09-22 18:00:00	1	23	4	1	\N
+2108	2025-09-22 18:04:00	1	23	4	1	\N
+2109	2025-09-22 18:07:00	1	23	4	2	\N
+2110	2025-09-22 18:11:00	1	23	4	1	\N
+2111	2025-09-22 18:13:00	1	23	1	1	1
+2112	2025-09-22 18:16:00	1	23	3	4	\N
+2113	2025-09-22 18:19:00	23	1	2	4	\N
+2114	2025-09-23 07:31:00	1	13	1	3	2
+2140	2025-09-23 12:42:00	21	15	4	3	\N
+2141	2025-09-23 12:42:00	21	23	4	2	\N
+2143	2025-09-23 12:42:00	21	22	4	2	\N
+2144	2025-09-23 12:46:00	21	25	4	0	\N
+2147	2025-09-23 12:51:00	21	7	3	4	\N
+2151	2025-09-23 12:59:00	7	23	4	2	\N
+2154	2025-09-23 13:03:00	7	22	0	4	\N
+2156	2025-09-23 16:27:00	21	1	3	4	\N
+2157	2025-09-23 16:32:00	1	7	4	1	\N
+2158	2025-09-23 16:36:00	1	21	3	4	\N
+2159	2025-09-24 12:15:00	21	1	4	2	\N
+2160	2025-09-24 12:22:00	21	4	4	1	\N
+2162	2025-09-24 12:28:00	7	21	4	3	\N
+2165	2025-09-24 12:36:00	7	22	3	4	\N
+2168	2025-09-24 12:48:00	22	23	4	2	\N
+2170	2025-09-24 12:48:00	22	25	3	4	\N
+2175	2025-09-24 13:03:00	7	25	4	3	\N
+2181	2025-09-24 13:11:00	23	7	4	3	\N
+2182	2025-09-25 08:42:00	1	13	0	1	2
+2185	2025-09-25 12:22:00	21	23	2	0	1
+2189	2025-09-25 12:36:00	23	7	4	2	\N
+2190	2025-09-25 12:36:00	23	22	4	3	\N
+2193	2025-09-25 12:44:00	25	23	4	3	1
+2195	2025-09-25 12:50:00	21	23	4	3	\N
+2197	2025-09-25 12:51:00	7	21	0	0	2
+2199	2025-09-25 12:57:00	22	7	2	4	\N
+2205	2025-09-25 13:08:00	7	25	3	4	\N
+2207	2025-09-25 16:23:00	21	7	4	2	\N
+2208	2025-09-25 16:29:00	21	1	3	3	2
+2209	2025-09-26 08:51:00	7	1	4	2	\N
+2210	2025-09-26 11:58:00	7	13	4	0	\N
+2211	2025-09-29 08:30:00	1	13	2	1	2
+2212	2025-09-29 08:52:00	1	7	3	4	\N
+2216	2025-09-29 12:26:00	7	21	3	4	\N
+2221	2025-09-29 12:41:00	21	22	3	2	1
+2222	2025-09-29 12:42:00	21	26	4	3	\N
+2224	2025-09-29 12:48:00	22	25	1	4	\N
+2226	2025-09-29 12:55:00	25	23	4	1	\N
+2229	2025-09-29 13:05:00	7	25	4	3	\N
+2231	2025-09-29 13:11:00	7	21	4	3	\N
+2232	2025-09-29 13:17:00	7	22	4	2	\N
+2233	2025-09-29 13:34:00	23	7	4	3	\N
+2234	2025-09-29 13:34:00	23	25	3	4	\N
+2235	2025-09-29 16:24:00	7	1	0	1	2
+2236	2025-09-29 16:26:00	1	7	2	0	1
+2237	2025-09-29 16:27:00	1	7	0	4	\N
+2238	2025-09-29 16:32:00	7	1	2	4	\N
+2239	2025-09-30 12:14:00	1	21	0	0	2
+2240	2025-09-30 12:15:00	21	1	0	0	2
+2244	2025-09-30 12:27:00	21	7	4	3	\N
+2246	2025-09-30 12:35:00	21	23	4	3	\N
+2249	2025-09-30 12:42:00	21	22	3	4	\N
+2252	2025-09-30 12:50:00	22	25	3	4	\N
+2255	2025-09-30 12:57:00	7	25	4	3	1
+2258	2025-09-30 13:03:00	23	25	4	2	\N
+2259	2025-09-30 13:07:00	23	21	3	1	2
+2262	2025-09-30 13:15:00	23	22	3	3	1
+2263	2025-09-30 16:28:00	7	11	1	4	\N
+2264	2025-09-30 16:31:00	11	1	4	3	1
+2269	2025-10-01 12:26:00	23	7	4	1	\N
+2272	2025-10-01 12:27:00	23	21	3	2	2
+2276	2025-10-01 12:37:00	23	22	1	4	\N
+2278	2025-10-01 12:40:00	33	23	2	4	\N
+2280	2025-10-01 12:40:00	21	22	0	1	1
+2281	2025-10-01 12:46:00	22	7	3	4	\N
+2284	2025-10-01 12:57:00	7	23	2	4	\N
+2285	2025-10-01 12:58:00	23	21	0	1	2
+2287	2025-10-01 13:02:00	22	23	4	2	\N
+2290	2025-10-01 13:09:00	22	7	4	1	\N
+2291	2025-10-01 13:12:00	22	7	4	2	\N
+2302	2025-10-02 12:32:00	21	22	3	4	\N
+2308	2025-10-02 12:49:00	22	23	4	2	\N
+2309	2025-10-02 12:50:00	25	22	4	1	\N
+2310	2025-10-02 12:50:00	25	7	4	1	\N
+2298	2025-10-02 12:24:00	7	21	0	2	1
+2315	2025-10-02 12:59:00	25	21	3	4	\N
+2316	2025-10-02 13:04:00	21	23	4	2	\N
+2319	2025-10-02 13:09:00	21	22	1	4	\N
+2321	2025-10-02 13:14:00	22	7	3	4	\N
+2322	2025-10-02 13:20:00	7	25	4	2	\N
+2323	2025-10-02 13:25:00	7	23	4	3	\N
+2324	2025-10-02 13:28:00	7	21	0	0	1
+2325	2025-10-02 13:43:00	21	23	4	1	\N
+2326	2025-10-02 13:44:00	21	22	3	3	2
+2327	2025-10-02 16:33:00	7	22	4	2	\N
+2328	2025-10-02 16:33:00	7	1	3	4	\N
+2329	2025-10-02 16:37:00	1	21	3	4	\N
+2330	2025-10-06 12:08:00	7	6	4	3	\N
+2331	2025-10-06 12:08:00	7	21	3	4	\N
+2334	2025-10-06 12:22:00	21	7	3	4	\N
+2335	2025-10-06 12:22:00	7	21	1	4	\N
+2339	2025-10-06 12:31:00	21	23	4	3	\N
+2340	2025-10-06 12:33:00	21	25	1	0	2
+2342	2025-10-06 12:37:00	21	7	4	1	\N
+2344	2025-10-06 12:38:00	21	23	0	1	2
+2346	2025-10-06 12:43:00	25	21	4	1	\N
+2347	2025-10-06 12:45:00	25	7	4	0	\N
+2350	2025-10-06 12:52:00	25	23	1	4	\N
+2351	2025-10-06 12:55:00	23	7	3	4	\N
+2356	2025-10-06 13:02:00	7	21	4	3	\N
+2360	2025-10-06 13:10:00	7	25	4	3	\N
+2362	2025-10-06 16:23:00	7	1	3	4	\N
+2363	2025-10-06 16:26:00	1	7	2	4	\N
+2364	2025-10-06 16:31:00	7	1	2	1	2
+2365	2025-10-07 12:17:00	25	21	4	1	\N
+2369	2025-10-07 12:29:00	25	7	3	4	\N
+2370	2025-10-07 12:29:00	7	23	4	0	\N
+2374	2025-10-07 12:38:00	7	21	4	3	\N
+2377	2025-10-07 12:41:00	7	15	4	1	\N
+2380	2025-10-07 12:50:00	25	7	2	4	\N
+2384	2025-10-07 13:01:00	7	23	4	3	\N
+2387	2025-10-07 13:07:00	7	21	4	0	\N
+2388	2025-10-07 13:12:00	7	3	3	0	2
+2389	2025-10-07 13:18:00	7	25	2	4	\N
+2390	2025-10-07 13:31:00	25	23	3	4	\N
+2391	2025-10-07 13:31:00	23	21	4	2	\N
+2392	2025-10-07 16:29:00	7	1	2	1	1
+2393	2025-10-07 16:33:00	1	21	4	2	\N
+2394	2025-10-07 16:41:00	23	21	2	1	2
+2395	2025-10-07 16:50:00	23	25	3	4	\N
+2396	2025-10-07 16:50:00	25	23	3	4	\N
+2397	2025-10-07 16:56:00	23	25	4	3	\N
+2398	2025-10-07 17:00:00	23	25	1	4	\N
+2399	2025-10-07 17:05:00	25	23	2	4	\N
+2400	2025-10-07 17:09:00	25	23	2	2	1
+2401	2025-10-07 17:19:00	25	23	3	4	\N
+2402	2025-10-08 07:41:00	23	1	3	4	\N
+2403	2025-10-08 07:48:00	1	23	0	4	\N
+2408	2025-10-08 12:26:00	25	7	4	1	\N
+2410	2025-10-08 12:36:00	25	23	4	3	\N
+2412	2025-10-08 12:36:00	25	21	4	2	\N
+2416	2025-10-08 12:51:00	25	7	4	2	\N
+2420	2025-10-08 13:02:00	23	21	0	4	\N
+2418	2025-10-08 12:59:00	23	25	4	2	\N
+2423	2025-10-08 13:24:00	21	23	4	2	\N
+2424	2025-10-08 13:29:00	21	23	3	0	2
+2425	2025-10-08 13:41:00	21	23	2	4	\N
+2426	2025-10-08 16:30:00	1	7	4	2	\N
+2427	2025-10-08 16:32:00	7	21	4	2	\N
+2429	2025-10-09 12:20:00	44	25	4	2	\N
+2432	2025-10-09 12:26:00	44	21	3	4	\N
+2434	2025-10-09 12:29:00	25	3	4	0	\N
+2435	2025-10-09 12:33:00	25	3	4	2	\N
+2440	2025-10-09 12:50:00	21	7	2	0	1
+2444	2025-10-09 12:58:00	7	23	2	4	\N
+2450	2025-10-09 14:09:00	23	21	4	3	\N
+2451	2025-10-09 14:09:00	23	14	4	1	\N
+2452	2025-10-09 16:30:00	1	21	2	4	\N
+2453	2025-10-09 16:31:00	21	1	4	3	\N
+2469	2025-10-13 13:02:00	21	7	4	2	\N
+2473	2025-10-13 13:08:00	21	25	4	3	\N
+2474	2025-10-13 13:13:00	25	21	4	1	\N
+2501	2025-10-14 13:36:00	23	21	0	0	2
+2478	2025-10-13 16:27:00	7	1	2	4	\N
+2479	2025-10-13 16:27:00	1	7	0	0	2
+2480	2025-10-13 16:29:00	7	1	4	1	\N
+2481	2025-10-13 16:34:00	7	1	3	4	\N
+2477	2025-10-13 13:28:00	23	21	4	3	\N
+2496	2025-10-14 13:14:00	21	23	4	3	\N
+2498	2025-10-14 13:20:00	21	7	4	3	\N
+2499	2025-10-14 13:36:00	21	23	3	4	\N
+2500	2025-10-14 13:36:00	23	21	4	3	\N
+2502	2025-10-14 13:37:00	21	23	3	4	\N
+2503	2025-10-14 16:25:00	21	7	3	3	2
+2504	2025-10-14 16:31:00	1	21	4	2	\N
+2505	2025-10-15 07:34:00	1	13	4	2	\N
+2506	2025-10-15 07:38:00	1	13	4	3	\N
+2507	2025-10-15 07:43:00	1	13	4	1	\N
+2508	2025-10-15 07:48:00	1	13	3	3	1
+2509	2025-10-15 09:23:00	23	1	0	4	\N
+2510	2025-10-15 09:28:00	1	23	3	3	2
+2511	2025-10-15 09:31:00	23	1	1	3	2
+2527	2025-10-15 13:04:00	23	6	4	3	\N
+2529	2025-10-15 13:10:00	23	7	3	4	\N
+2530	2025-10-15 13:14:00	7	21	4	3	\N
+2531	2025-10-16 12:17:00	21	1	3	2	2
+2537	2025-10-16 12:41:00	23	21	2	4	\N
+2540	2025-10-16 12:46:00	21	23	3	4	\N
+2542	2025-10-16 12:51:00	23	21	4	3	\N
+2544	2025-10-16 12:58:00	23	14	4	3	\N
+2546	2025-10-16 13:04:00	23	21	4	3	\N
+2549	2025-10-16 13:15:00	23	21	3	4	\N
+2550	2025-10-17 11:39:00	25	7	3	4	\N
+2551	2025-10-17 11:43:00	7	21	4	3	\N
+2552	2025-10-17 11:49:00	7	25	4	3	\N
+2553	2025-10-17 11:54:00	7	21	0	1	2
+2554	2025-10-17 11:55:00	25	7	2	4	\N
+2555	2025-10-17 12:04:00	7	21	4	3	\N
+2570	2025-10-20 13:01:00	21	25	2	4	\N
+2804	2025-11-10 12:20:00	22	6	0	0	2
+2571	2025-10-20 13:02:00	25	23	0	2	2
+2573	2025-10-20 13:04:00	21	25	4	2	\N
+2576	2025-10-20 13:12:00	21	23	4	2	\N
+2577	2025-10-20 13:14:00	21	25	0	0	2
+2578	2025-10-20 13:22:00	23	21	3	4	\N
+2584	2025-10-21 12:35:00	21	7	2	4	\N
+2585	2025-10-21 12:35:00	7	23	2	4	\N
+2586	2025-10-21 12:39:00	23	25	4	0	\N
+2589	2025-10-21 12:48:00	23	21	3	4	\N
+2590	2025-10-21 12:56:00	21	7	3	4	\N
+2592	2025-10-21 13:05:00	7	25	3	4	\N
+2593	2025-10-21 13:05:00	8	23	4	3	\N
+2595	2025-10-21 13:12:00	23	25	3	4	\N
+2597	2025-10-22 12:17:00	21	15	4	0	\N
+2601	2025-10-22 12:34:00	21	23	2	4	\N
+2603	2025-10-22 12:35:00	23	7	3	4	\N
+2606	2025-10-22 12:41:00	7	21	2	4	\N
+2611	2025-10-22 12:52:00	21	23	0	2	2
+2616	2025-10-22 12:58:00	7	21	3	4	\N
+2619	2025-10-23 12:18:00	21	7	2	4	\N
+2622	2025-10-23 12:55:00	7	23	4	3	\N
+2623	2025-10-23 12:55:00	7	21	0	0	2
+2625	2025-10-23 13:01:00	23	7	2	4	\N
+2628	2025-10-27 12:15:00	21	36	0	3	2
+2631	2025-10-27 12:23:00	23	21	3	4	\N
+2632	2025-10-27 12:26:00	21	7	4	0	\N
+2635	2025-10-27 12:31:00	21	25	0	1	2
+2637	2025-10-27 12:38:00	21	36	3	3	1
+2641	2025-10-27 12:46:00	36	23	4	3	1
+2645	2025-10-27 12:53:00	36	7	4	3	\N
+2646	2025-10-27 12:57:00	36	25	1	4	\N
+2653	2025-10-28 12:23:00	7	21	4	3	\N
+2654	2025-10-28 12:28:00	7	23	4	3	\N
+2805	2025-11-10 12:21:00	21	22	4	0	\N
+2657	2025-10-28 12:36:00	7	14	2	4	\N
+2660	2025-10-28 12:39:00	14	21	4	2	\N
+2662	2025-10-28 12:48:00	23	14	3	4	\N
+2665	2025-10-28 12:52:00	14	7	2	2	1
+2667	2025-10-28 12:57:00	21	7	2	0	2
+2668	2025-10-28 13:02:00	21	23	2	2	2
+2669	2025-10-28 16:25:00	7	1	4	0	\N
+2670	2025-10-28 16:33:00	7	1	3	4	\N
+2672	2025-10-29 12:16:00	23	7	0	4	\N
+2675	2025-10-29 12:32:00	7	23	4	3	\N
+2677	2025-10-29 12:32:00	7	25	2	0	2
+2678	2025-10-29 12:33:00	7	14	4	2	\N
+2679	2025-10-29 12:33:00	7	25	0	1	2
+2681	2025-10-29 12:40:00	23	7	2	3	2
+2684	2025-10-29 12:45:00	23	25	4	3	\N
+2687	2025-10-29 12:57:00	7	23	4	2	\N
+2688	2025-10-29 12:58:00	7	25	0	1	2
+2690	2025-10-29 13:01:00	23	7	2	4	\N
+2693	2025-10-30 12:15:00	7	21	4	1	\N
+2700	2025-10-30 12:37:00	7	25	4	3	\N
+2701	2025-10-30 12:37:00	7	23	4	2	\N
+2702	2025-10-30 12:38:00	7	21	2	4	\N
+2706	2025-10-30 12:48:00	23	21	3	2	2
+2704	2025-10-30 12:45:00	23	25	4	3	\N
+2708	2025-10-30 12:57:00	23	7	3	4	\N
+2710	2025-10-30 13:02:00	7	25	4	2	\N
+2711	2025-10-30 16:30:00	7	1	3	3	1
+2712	2025-10-30 16:30:00	21	7	2	4	\N
+2713	2025-10-30 16:36:00	1	21	3	4	\N
+2714	2025-11-03 12:07:00	21	14	4	3	\N
+2715	2025-11-03 12:10:00	21	14	4	1	\N
+2717	2025-11-03 12:16:00	21	14	4	2	\N
+2720	2025-11-03 12:25:00	21	7	3	4	\N
+2724	2025-11-03 12:33:00	7	25	1	4	\N
+2727	2025-11-03 12:40:00	25	21	2	4	\N
+2730	2025-11-03 12:45:00	21	7	2	4	\N
+2732	2025-11-03 12:50:00	7	25	4	1	\N
+2735	2025-11-03 12:56:00	7	21	3	4	\N
+2736	2025-11-03 12:58:00	25	21	0	1	2
+2738	2025-11-03 13:03:00	25	7	3	2	2
+2739	2025-11-03 16:33:00	7	21	1	1	1
+2740	2025-11-04 12:22:00	7	21	4	2	\N
+2741	2025-11-04 12:23:00	7	21	1	3	2
+2745	2025-11-04 12:32:00	25	7	2	4	\N
+2747	2025-11-04 12:40:00	21	7	2	3	1
+2750	2025-11-04 12:44:00	7	25	1	4	\N
+2753	2025-11-04 12:51:00	25	21	2	4	\N
+2756	2025-11-04 12:59:00	21	7	4	2	\N
+2759	2025-11-04 19:30:00	21	7	4	2	\N
+2760	2025-11-05 12:13:00	21	25	4	2	\N
+2761	2025-11-05 12:13:00	21	22	4	0	\N
+2762	2025-11-05 12:18:00	21	25	4	1	\N
+2764	2025-11-05 12:26:00	21	22	4	2	\N
+2766	2025-11-05 12:33:00	21	7	3	4	\N
+2771	2025-11-05 12:39:00	7	25	2	0	1
+2773	2025-11-05 12:45:00	25	22	1	4	\N
+2776	2025-11-05 12:55:00	22	7	1	4	\N
+2777	2025-11-05 12:56:00	21	22	3	4	\N
+2784	2025-11-06 12:23:00	7	6	4	3	1
+2786	2025-11-06 12:31:00	6	21	4	3	\N
+2788	2025-11-06 12:35:00	6	22	4	0	\N
+2790	2025-11-06 12:46:00	22	6	3	4	\N
+2791	2025-11-06 12:47:00	6	7	4	3	\N
+2794	2025-11-06 12:50:00	6	21	4	3	\N
+2796	2025-11-06 12:53:00	6	23	1	0	2
+2797	2025-11-06 12:54:00	22	6	0	0	1
+2799	2025-11-06 12:59:00	7	6	1	4	\N
+2800	2025-11-06 13:03:00	21	23	2	2	2
+2803	2025-11-10 12:20:00	22	21	4	1	\N
+2807	2025-11-10 12:26:00	21	6	1	4	\N
+2808	2025-11-10 12:32:00	6	7	4	3	\N
+2810	2025-11-10 12:41:00	6	22	3	4	\N
+2812	2025-11-10 12:47:00	22	21	3	4	\N
+2813	2025-11-10 12:52:00	21	7	3	2	2
+2818	2025-11-10 13:00:00	21	22	4	3	\N
+2822	2025-11-11 12:24:00	22	7	4	2	\N
+2827	2025-11-11 12:36:00	22	21	2	4	\N
+2828	2025-11-11 12:37:00	21	7	2	1	1
+2829	2025-11-11 12:40:00	7	22	0	4	\N
+2831	2025-11-11 12:44:00	22	21	4	0	\N
+2835	2025-11-11 12:52:00	21	7	4	1	\N
+2836	2025-11-11 12:53:00	7	22	0	1	2
+2837	2025-11-11 12:53:00	22	21	0	0	2
+2839	2025-11-11 13:00:00	7	22	4	3	\N
+2842	2025-11-12 12:16:00	21	22	0	4	\N
+2845	2025-11-12 12:21:00	22	7	4	2	\N
+2847	2025-11-12 12:29:00	22	21	4	3	\N
+2850	2025-11-12 12:33:00	22	7	4	1	\N
+2853	2025-11-12 12:38:00	22	21	3	4	\N
+2855	2025-11-12 12:44:00	21	7	3	3	1
+2857	2025-11-12 12:49:00	7	22	1	2	2
+2860	2025-11-12 12:56:00	7	21	2	4	\N
+2862	2025-11-12 13:05:00	22	21	4	3	\N
+2865	2025-11-13 12:18:00	22	21	4	3	\N
+2866	2025-11-13 12:18:00	22	7	4	2	\N
+2867	2025-11-13 12:21:00	22	21	4	0	\N
+2869	2025-11-13 12:31:00	22	7	4	3	\N
+2871	2025-11-13 12:39:00	22	21	4	3	\N
+2873	2025-11-13 12:46:00	22	7	3	4	\N
+2874	2025-11-13 12:49:00	7	21	4	0	\N
+2780	2025-11-05 13:01:00	25	7	1	4	\N
+2876	2025-11-13 12:59:00	7	22	4	3	\N
+2879	2025-11-17 12:13:00	22	6	4	1	\N
+2880	2025-11-17 12:13:00	22	21	3	4	\N
+2881	2025-11-17 12:16:00	21	7	1	0	2
+2883	2025-11-17 12:22:00	21	22	4	1	\N
+2885	2025-11-17 12:30:00	21	7	4	2	\N
+2887	2025-11-17 12:35:00	21	6	2	4	\N
+2888	2025-11-17 12:41:00	6	22	2	4	\N
+2890	2025-11-17 12:46:00	22	7	4	3	\N
+2892	2025-11-17 12:53:00	22	21	1	4	\N
+2894	2025-11-17 12:59:00	21	6	4	2	\N
+2895	2025-11-17 13:04:00	7	21	3	4	\N
+2896	2025-11-18 12:07:00	21	6	4	3	\N
+2897	2025-11-18 12:07:00	21	6	2	4	\N
+2899	2025-11-18 12:12:00	6	22	1	4	\N
+2900	2025-11-18 12:19:00	22	7	2	2	1
+2904	2025-11-18 12:32:00	21	22	4	3	\N
+2906	2025-11-18 12:40:00	25	21	2	4	\N
+2902	2025-11-18 12:25:00	7	21	3	3	1
+2909	2025-11-18 12:49:00	21	7	3	4	\N
+2911	2025-11-18 12:56:00	7	22	3	4	\N
+2914	2025-11-18 13:02:00	25	22	0	4	\N
+2915	2025-11-18 13:08:00	21	22	4	3	\N
+2918	2025-11-19 12:25:00	21	6	3	4	\N
+2920	2025-11-19 12:31:00	6	7	4	1	\N
+2923	2025-11-19 12:38:00	6	22	4	3	\N
+2924	2025-11-19 12:39:00	6	21	4	0	\N
+2927	2025-11-19 12:45:00	6	7	1	4	\N
+2930	2025-11-19 12:49:00	7	22	2	2	1
+2931	2025-11-19 12:52:00	22	21	4	1	\N
+2933	2025-11-19 12:58:00	22	7	4	2	\N
+2934	2025-11-19 13:00:00	22	21	0	1	1
+2935	2025-11-19 13:04:00	21	7	3	0	1
+2936	2025-11-19 13:08:00	7	22	1	4	\N
+2937	2025-11-20 12:11:00	7	21	4	1	\N
+2939	2025-11-20 12:25:00	21	22	3	4	\N
+2940	2025-11-20 12:31:00	22	7	4	3	\N
+2941	2025-11-20 12:32:00	22	21	1	1	2
+2944	2025-11-20 12:41:00	6	22	4	3	\N
+2946	2025-11-20 12:41:00	6	7	1	2	1
+2947	2025-11-20 12:47:00	21	7	3	4	\N
+2951	2025-11-20 12:54:00	7	22	3	4	\N
+2952	2025-11-20 12:58:00	22	21	4	1	\N
+2954	2025-11-20 13:07:00	7	22	3	4	\N
+2956	2025-11-24 12:20:00	7	21	4	3	\N
+2961	2025-11-24 12:44:00	7	22	4	3	\N
+2962	2025-11-24 12:44:00	7	23	4	3	\N
+2963	2025-11-24 12:45:00	7	25	0	1	2
+2967	2025-11-24 12:49:00	7	21	2	1	2
+2969	2025-11-24 12:59:00	7	22	1	4	\N
+2970	2025-11-24 12:59:00	22	23	4	1	\N
+2972	2025-11-25 12:52:00	21	22	4	3	\N
+2973	2025-11-25 12:52:00	21	7	1	1	2
+2974	2025-11-25 12:53:00	22	21	1	4	\N
+2975	2025-11-25 12:53:00	21	25	4	1	\N
+2976	2025-11-25 12:53:00	21	7	0	4	\N
+2977	2025-11-25 12:54:00	7	22	4	2	\N
+2978	2025-11-25 13:03:00	7	23	1	4	\N
+2979	2025-11-26 12:21:00	22	7	4	3	\N
+2981	2025-11-26 12:25:00	22	21	4	1	\N
+2984	2025-11-26 12:34:00	22	23	4	2	\N
+2986	2025-11-26 12:41:00	22	25	4	2	\N
+2987	2025-11-26 12:42:00	22	7	2	2	1
+2989	2025-11-26 12:53:00	7	23	1	1	2
+2991	2025-11-26 12:53:00	7	21	4	3	\N
+2992	2025-11-26 13:01:00	7	25	3	4	\N
+2993	2025-11-26 13:07:00	21	23	4	1	\N
+3002	2025-12-01 12:24:00	7	6	4	3	\N
+3004	2025-12-01 12:25:00	7	22	2	4	\N
+3006	2025-12-01 12:33:00	6	21	4	2	\N
+3007	2025-12-01 12:33:00	23	22	4	0	\N
+3008	2025-12-01 12:33:00	25	23	4	0	\N
+3012	2025-12-01 12:51:00	25	21	3	4	\N
+3014	2025-12-01 12:55:00	22	25	1	2	2
+3016	2025-12-01 13:01:00	22	23	4	3	\N
+3017	2025-12-01 13:07:00	22	21	4	3	\N
+3018	2025-12-01 13:09:00	22	21	3	4	\N
+3019	2025-12-01 13:16:00	21	23	4	2	\N
+3020	2025-12-02 12:09:00	21	11	4	2	\N
+3021	2025-12-02 12:09:00	21	11	3	4	\N
+3024	2025-12-02 12:16:00	11	7	2	0	1
+3026	2025-12-02 12:22:00	11	22	4	1	\N
+3027	2025-12-02 12:23:00	23	7	4	1	\N
+3029	2025-12-02 12:27:00	23	21	2	4	\N
+3031	2025-12-02 12:34:00	21	22	2	4	\N
+3033	2025-12-02 12:46:00	22	7	4	2	\N
+3034	2025-12-02 12:51:00	22	23	4	2	\N
+3036	2025-12-02 12:56:00	22	21	4	2	\N
+3037	2025-12-02 12:59:00	22	7	4	1	\N
+3039	2025-12-03 12:22:00	21	7	3	4	\N
+3040	2025-12-03 12:23:00	7	21	4	3	\N
+3042	2025-12-03 12:29:00	7	23	4	3	\N
+3045	2025-12-03 12:41:00	7	21	4	3	\N
+3046	2025-12-03 12:45:00	7	23	3	4	\N
+3047	2025-12-03 12:52:00	23	21	2	1	1
+3050	2025-12-03 12:59:00	21	7	4	3	\N
+3052	2025-12-03 13:04:00	21	23	3	4	\N
+3058	2025-12-04 12:41:00	7	22	4	3	\N
+3059	2025-12-04 12:41:00	7	21	4	1	\N
+3060	2025-12-04 12:41:00	7	22	4	3	\N
+3061	2025-12-04 12:41:00	7	23	3	4	\N
+3063	2025-12-04 12:51:00	23	21	4	3	\N
+3065	2025-12-04 12:57:00	23	22	3	4	\N
+3068	2025-12-04 13:04:00	22	7	4	3	\N
+3070	2025-12-11 12:26:00	11	1	0	0	1
+3071	2025-12-11 12:34:00	11	1	3	4	\N
+3072	2025-12-11 12:40:00	1	22	2	4	\N
+3073	2025-12-11 12:44:00	23	22	4	1	\N
+3074	2025-12-11 12:47:00	1	23	1	4	\N
+3075	2025-12-11 12:55:00	23	22	4	2	\N
+3076	2025-12-11 13:03:00	23	1	4	3	\N
+3077	2025-12-11 13:06:00	23	6	1	4	\N
 \.
 
 
@@ -2499,14 +5256,14 @@ COPY public.partida_sinuca (id, data_hora, jogador1_id, jogador2_id, placar1, pl
 -- Name: jogador_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.jogador_id_seq', 32, true);
+SELECT pg_catalog.setval('public.jogador_id_seq', 44, true);
 
 
 --
 -- Name: partida_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.partida_id_seq', 537, true);
+SELECT pg_catalog.setval('public.partida_id_seq', 3077, true);
 
 
 --

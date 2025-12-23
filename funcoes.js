@@ -1,3 +1,6 @@
+document.addEventListener('DOMContentLoaded', () => {
+});
+
 $JOGADORES = {};
 
 function nomeDoMes(numero) {

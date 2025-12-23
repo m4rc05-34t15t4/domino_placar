@@ -12,6 +12,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const ModalPartida = new bootstrap.Modal(document.getElementById('ModalPartida'));
 
+    const overlay = document.getElementById('loadingOverlay');
+
+    function showLoading() {
+        overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // trava scroll
+    }
+
+    function hideLoading() {
+        overlay.classList.add('hidden');
+        document.body.style.overflow = ''; // libera scroll
+    }
+
     async function buscarDados(opcao='SINUCA') {
         try {
             const response = await fetch('php/api.php?opcao='+opcao);
@@ -569,7 +581,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     $("#bt_excluir_partida").fadeOut(0);
 
+    showLoading();
+    // FAILSAFE: nunca deixa travado
+    const safetyTimeout = setTimeout(() => {
+        hideLoading();
+        console.warn('Spinner fechado por segurança');
+    }, 7000);
+
     buscarDados().then(dados => {
+        hideLoading();
         if (dados && dados.data && dados.data.get_jogadores) {
             // Cria um mapa de ID para nome do jogador
             dados.data.get_jogadores.forEach(j => {

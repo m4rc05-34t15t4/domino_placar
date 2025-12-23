@@ -13,6 +13,7 @@
     </head>
     
     <body>
+        <?php require_once('php/loading.php'); ?>
         <div class="main-container container-fluid min-vh-100 bg-light p-0">
             <div class="d-flex justify-content-around align-items-center flex-wrap m-2 mt-3">
                 <h1 class="h3 text-dark d-flex align-items-center gap-2">
@@ -197,7 +198,6 @@
                 </div>
             </div>
         </div>
-
     </body>
     <script src="funcoes.js<?=$v;?>"></script>
     <script src="script.js<?=$v;?>"></script>
