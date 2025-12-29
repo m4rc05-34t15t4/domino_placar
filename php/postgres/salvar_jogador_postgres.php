@@ -30,35 +30,21 @@ try {
     $sql = "";
     switch ($acao) {
         case 'INSERT':
-            $sql = "INSERT INTO jogador (nome) VALUES ('$nome');";
+            $sql = "INSERT INTO jogador (nome) VALUES ('$nome') RETURNING id;";
             break;
         case 'UPDATE':
-            $sql = "UPDATE jogador SET nome = '$nome' WHERE id = $id_jogador;";
+            $sql = "UPDATE jogador SET nome = '$nome' WHERE id = $id_jogador RETURNING *;";
             break;
         case 'DELETE':
-            $sql = "DELETE FROM jogador WHERE id = $id_jogador;";
+            $sql = "DELETE FROM jogador WHERE id = $id_jogador RETURNING id;";
             break;
-        default:
-            http_response_code(400);
-            echo json_encode(['erro' => 'Ação inválida']);
-            exit;
     }
 
-    if($sql != "") {
-        $resultado = executeQuery($sql);
+    if($sql != "") $resultado = executeQuery($sql);
+    echo json_encode(['resultado' => $resultado]);
+    
 
-        // Ajusta o resultado para mostrar o ID ou affected_rows
-        if ($acao == 'INSERT' && $resultado['success']) {
-            $resultado['insert_id'] = $resultado['insert_id'];
-        } elseif (($acao == 'UPDATE' || $acao == 'DELETE') && $resultado['success']) {
-            $resultado['affected_rows'] = $resultado['affected_rows'];
-        }
-
-        echo json_encode(['resultado' => $resultado]);
-    }
-
-} catch (Exception $e) {
+} catch (PDOException $e) {
     http_response_code(500);
     echo json_encode(['erro' => 'Erro no banco de dados: ' . $e->getMessage()]);
 }
-?>
