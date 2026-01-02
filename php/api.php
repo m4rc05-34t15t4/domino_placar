@@ -1,5 +1,14 @@
 <?php
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+header('Content-Type: application/json; charset=utf-8');
+
 include_once 'db_conexao.php';
+include_once 'sql.php';
+
+$resultado = [];
 
 function get_filtro($array_f){
     $filtro = [];
@@ -9,18 +18,28 @@ function get_filtro($array_f){
     return $filtro;
 }
 
-// Lista rank mensal dominó
-function get_rank_mensal($exp="", $jog="", $order="ano desc, mes desc"){
-    global $resultado;
-    $sql = "SELECT * FROM vw_rank".$jog."_mensal$exp ORDER BY $order;";
-    resultado_array(executeQuery($sql), 'get_rank'.$jog.'_mensal'.$exp);
+function nome_e($n){
+    $e = '';
+    switch ($n) {
+        case 'dentro':
+            $e = '_expediente';
+            break;
+        case 'fora':
+            $e = '_fora_expediente';
+            break;
+    }
+    return $e;
 }
 
-// Lista rank semanal dominó
-function get_rank_semanal(){
+function nome_j($n){
+    return $n == "sinuca" ? "_sinuca" : '';
+}
+
+// Lista rank mensal dominó
+function get_rank_mensal($exp="", $jog="", $order="order by ano desc, mes desc"){
     global $resultado;
-    $sql = "SELECT * FROM vw_rank_semanal;";
-    resultado_array(executeQuery($sql), 'get_rank_semanal');
+    $sql = $jog == "sinuca" ? gerarSqlRankingSinucaMensal($exp, $order) : gerarSqlRankingMensal($exp, $order);
+    resultado_array(executeQuery($sql), 'get_rank'.nome_j($jog).'_mensal'.nome_e($exp));
 }
 
 // Lista jogadores
@@ -46,44 +65,24 @@ function get_partidas($id_partida="IS NOT NULL"){
 }
 
 // Lista Statistica Duplas Jogadores
-function get_duplas_estatistica($order="partidas DESC"){
+function get_duplas_estatistica($exp = "", $order = "ORDER BY partidas DESC"){
     global $resultado;
-    $sql = "SELECT *
-            FROM vw_dupla_estatistica 
-            WHERE PARTIDAS > 0 
-            ORDER BY $order";
-    resultado_array(executeQuery($sql), 'get_duplas_estatistica');
+    $sql = sqlDuplasEstatisticas($exp, $order);
+    resultado_array(executeQuery($sql), 'get_duplas_estatistica'.nome_e($exp));
 }
 
 // Lista Statistica Jogadores
-function get_jogadores_estatistica($exp="", $id_jogador="IS NOT NULL", $order="partidas desc", $ult="_ultimos_jogos"){
+function get_jogadores_estatistica($exp="", $jog=""){
     global $resultado;
-    $sql = "SELECT *
-            FROM vw_jogador_estatistica$exp$ult 
-            WHERE id $id_jogador AND PARTIDAS > 0 
-            ORDER BY $order";
+    $sql = $jog == "sinuca" ? gerarSqlJogadorEstatisticaSinuca($exp) : gerarSqlJogadorEstatistica($exp);
     $r = executeQuery($sql);
-    resultado_array($r, 'get_jogadores_estatistica'.$exp);
-}
-
-// Lista Statistica Jogadores sinuca
-function get_jogadores_estatistica_sinuca($exp="", $id_jogador="IS NOT NULL", $order="qtd_partidas_utilizadas desc, vitorias DESC", $ult="_ultimos_jogos"){
-    global $resultado;
-    $sql = "SELECT *
-            FROM vw_jogador_estatistica_sinuca$exp$ult 
-            WHERE id $id_jogador AND qtd_partidas_utilizadas > 0 
-            ORDER BY $order";
-    $r = executeQuery($sql);
-    resultado_array($r, 'get_jogadores_estatistica_sinuca'.$exp);
+    resultado_array($r, 'get_jogadores_estatistica'.nome_j($jog).nome_e($exp));
 }
 
 // Lista Statistica Rivais Jogadores Sinuca
-function get_rivais_estatistica_sinuca($order="partidas DESC"){
+function get_rivais_estatistica_sinuca(){
     global $resultado;
-    $sql = "SELECT *
-            FROM vw_comparacao_rivais_sinuca 
-            WHERE PARTIDAS > 0 
-            ORDER BY $order";
+    $sql = sqlRankingConfrontosSinuca();
     $r = executeQuery($sql);
     resultado_array($r, 'get_rivais_estatistica_sinuca');
 }
@@ -112,7 +111,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (!is_array($opcao) && strpos($opcao, ',') !== false) $opcao = explode(',', $opcao);
     elseif (!is_array($opcao)) $opcao = [$opcao];
     
-    $resultado = [];
     foreach ($opcao as $opc) {
         switch ($opc) {
             case 'get_jogadores':
@@ -123,34 +121,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 break;
             case 'get_jogadores_estatistica':
                 get_jogadores_estatistica();
-                get_jogadores_estatistica("_expediente");
-                get_jogadores_estatistica("_fora_expediente");
-                get_jogadores_estatistica($exp="_rank", $id_jogador="IS NOT NULL", $order="vitorias DESC", $ult="");
+                get_jogadores_estatistica("dentro");
+                get_jogadores_estatistica("fora");
                 break;
             case 'get_duplas_estatistica':
                 get_duplas_estatistica();
                 break;
-            case 'get_rank_semanal':
-                get_rank_semanal();
-                break;
             case 'get_rank_mensal':
                 get_rank_mensal("");
-                get_rank_mensal("_expediente");
-                get_rank_mensal("_fora_expediente");
+                get_rank_mensal("dentro");
+                get_rank_mensal("fora");
                 break;
             case 'get_partidas_sinuca':
                 get_partidas_sinuca();
                 break;
             case 'get_jogadores_estatistica_sinuca':
-                get_jogadores_estatistica_sinuca();
-                get_jogadores_estatistica_sinuca('_expediente');
-                get_jogadores_estatistica_sinuca('_fora_expediente');
-                get_jogadores_estatistica_sinuca($exp="_rank", $id_jogador="IS NOT NULL", $order="vitorias DESC", $ult="");
+                get_jogadores_estatistica('', 'sinuca');
+                get_jogadores_estatistica('dentro', 'sinuca');
+                get_jogadores_estatistica('fora', 'sinuca');
                 break;
             case 'get_rank_sinuca_mensal':
-                get_rank_mensal("", "_sinuca");
-                get_rank_mensal("_expediente", "_sinuca");
-                get_rank_mensal("_fora_expediente", "_sinuca");
+                get_rank_mensal("", "sinuca");
+                get_rank_mensal("dentro", "sinuca");
+                get_rank_mensal("fora", "sinuca");
                 break;
             case 'get_rivais_estatistica_sinuca':
                 get_rivais_estatistica_sinuca();

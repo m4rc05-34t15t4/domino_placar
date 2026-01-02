@@ -1,18 +1,24 @@
 <?php
 
-// Neon sao paulo MySQL
-$host = "localhost";      // coloque o host MySQL
-$dbname = "jogos";
-$username = "root";   // usuário MySQL
-$password = "root";     // senha MySQL
-$port = "3306";                // porta padrão MySQL
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+
+$host = "sql104.infinityfree.com"; // coloque o host MySQL
+$dbname = "if0_40728404_jogos";
+$username = "if0_40728404"; // usuário MySQL
+$password = "mb11036095"; // senha MySQL
+$port = "3306"; // porta padrão MySQL
+$PREFIXO_DB = 'if0_40728404_';   
 
 if(is_localhost()){
     $host = 'localhost';  
     $dbname = 'jogos';
     $port = '3306'; 
     $username = 'root';  
-    $password = 'root';  
+    $password = 'root';
+    $GLOBALS['PREFIXO_DB'] = '';
 }
 
 // Função para verificar se está em localhost
@@ -64,10 +70,38 @@ function executeQuery($sql) {
     }
 }
 
+function renderTabela(array $dados): void {
+    if (empty($dados)) {
+        echo "<p><strong>Nenhum registro encontrado.</strong></p>";
+        return;
+    }
+    echo "<table border='1' cellpadding='6' cellspacing='0' style='border-collapse:collapse;width:100%'>";
+    // cabeçalho
+    echo "<thead><tr>";
+    foreach (array_keys($dados[0]) as $coluna) {
+        echo "<th style='background:#eee;text-align:left'>" . htmlspecialchars($coluna) . "</th>";
+    }
+    echo "</tr></thead>";
+    // corpo
+    echo "<tbody>";
+    foreach ($dados as $linha) {
+        echo "<tr>";
+        foreach ($linha as $valor) {
+            echo "<td>" . htmlspecialchars((string)$valor) . "</td>";
+        }
+        echo "</tr>";
+    }
+    echo "</tbody>";
+    echo "</table>";
+}
 
-$sql = "SELECT * FROM jogador ORDER BY nome;";
+require_once ('sql.php');
 
-var_dump(executeQuery($sql));
+$sql = gerarSqlJogadorEstatisticaSinuca('dentro');
+
+echo $sql;
+
+renderTabela(executeQuery($sql)['data']);
 
 ?>
 
