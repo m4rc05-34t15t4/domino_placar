@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function buscarDados(opcao='ALL') {
         try {
             const response = await fetch('php/api.php?opcao='+opcao);
-            console.log(await response.text());
+            //console.log(await response.text());
             if (!response.ok) {
                 throw new Error('Erro na requisição: ' + response.status);
             }

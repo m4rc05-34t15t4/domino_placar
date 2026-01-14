@@ -15,9 +15,9 @@ $PREFIXO_DB = 'if0_40728404_';
 if(is_localhost()){
     $host = 'localhost';  
     $dbname = 'jogos';
-    $port = '3306'; 
-    $username = 'root';  
-    $password = 'root';
+    $port = '5432'; 
+    $username = 'postgres';  
+    $password = 'admin';
     $GLOBALS['PREFIXO_DB'] = '';
 }
 
@@ -94,8 +94,6 @@ function renderTabela(array $dados): void {
     echo "</tbody>";
     echo "</table>";
 }
-
-require_once ('sql.php');
 
 $sql = gerarSqlJogadorEstatisticaSinuca('dentro');
 
